@@ -24,6 +24,8 @@ def dashboard():
     schools = cursor.fetchall()
     return render_template('super_admin/dashboard.html', schools=schools)
 
+# app/routes/super_admin.py
+
 @bp.route('/schools', methods=['GET', 'POST'])
 @super_admin_required
 def schools():
@@ -38,9 +40,10 @@ def schools():
                        (name, school_type))
         school_id = cursor.lastrowid
         
-        init_school_db(school_id, school_type)
+        db.commit()  
         
-        flash(f'مدرسه "{name}" با موفقیت ایجاد شد', 'success')
+        init_school_db(school_id, school_type)
+        flash(f'مدرسه "{name}" ایجاد شد', 'success')
         return redirect(url_for('super_admin.schools'))
     
     cursor.execute('SELECT * FROM schools ORDER BY id DESC')
@@ -65,8 +68,14 @@ def admins():
             VALUES (?, ?, ?, ?, ?)
         ''', (username, password, name, school_id, phone))
         
-        flash(f'مدیر "{name}" با موفقیت اضافه شد', 'success')
+        db.commit()  
+        
+        flash(f'مدیر "{name}" اضافه شد', 'success')
         return redirect(url_for('super_admin.admins'))
+    
+    # این query باید مدارس را بگیرد
+    cursor.execute('SELECT * FROM schools ORDER BY name')
+    schools = cursor.fetchall()  
     
     cursor.execute('''
         SELECT a.*, s.name as school_name, s.type as school_type
@@ -76,10 +85,7 @@ def admins():
     ''')
     admins = cursor.fetchall()
     
-    cursor.execute('SELECT * FROM schools')
-    schools = cursor.fetchall()
     return render_template('super_admin/admins.html', admins=admins, schools=schools)
-
 @bp.route('/impersonate/<int:admin_id>')
 @super_admin_required
 def impersonate(admin_id):
