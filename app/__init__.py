@@ -1,6 +1,6 @@
 from flask import Flask
-from .models import init_main_db, create_super_admin
-from .routes import auth, super_admin, school_admin, teacher
+from models import init_main_db, create_super_admin
+from routes import auth, super_admin, school_admin, teacher
 
 def create_app():
     app = Flask(__name__)
