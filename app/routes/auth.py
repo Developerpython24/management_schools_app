@@ -23,7 +23,7 @@ def index():
             return redirect(url_for('school_admin.dashboard'))
         elif session.get('role') == 'teacher':
             return redirect(url_for('teacher.dashboard'))
-return redirect(url_for('auth.login'))
+    return redirect(url_for('auth.login'))
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
