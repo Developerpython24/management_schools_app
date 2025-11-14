@@ -16,7 +16,14 @@ def login_required(f):
 
 @bp.route('/')
 def index():
-    # ... کد بدون تغییر ...
+     if 'user_id' in session:
+        if session.get('role') == 'super_admin':
+            return redirect(url_for('super_admin.dashboard'))
+        elif session.get('role') == 'school_admin':
+            return redirect(url_for('school_admin.dashboard'))
+        elif session.get('role') == 'teacher':
+            return redirect(url_for('teacher.dashboard'))
+    return redirect(url_for('auth.login'))
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
