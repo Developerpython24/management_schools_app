@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.models import get_db, init_school_db
-from sms_service import sms_service
+from app.sms_service import sms_service
 import hashlib
 
 bp = Blueprint('super_admin', __name__)
