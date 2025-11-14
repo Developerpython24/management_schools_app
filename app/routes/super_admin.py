@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from models import get_db, init_school_db
+from app.models import get_db, init_school_db
 from sms_service import sms_service
 import hashlib
 
