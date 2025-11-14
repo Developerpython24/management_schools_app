@@ -1,15 +1,16 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.models import get_db, init_school_db
 from app.sms_service import sms_service
+from config import Config
 import hashlib
+from functools import wraps
 
 bp = Blueprint('super_admin', __name__)
 
 def super_admin_required(f):
-    from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('username') != 'superadmin':
+        if session.get('username') != Config.SUPER_ADMIN_USERNAME:
             from flask import abort
             abort(403)
         return f(*args, **kwargs)
@@ -20,11 +21,9 @@ def super_admin_required(f):
 def dashboard():
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM schools')
+    cursor.execute('SELECT id, name, type, created_at FROM schools ORDER BY id DESC')
     schools = cursor.fetchall()
     return render_template('super_admin/dashboard.html', schools=schools)
-
-# app/routes/super_admin.py
 
 @bp.route('/schools', methods=['GET', 'POST'])
 @super_admin_required
@@ -46,7 +45,7 @@ def schools():
         flash(f'مدرسه "{name}" ایجاد شد', 'success')
         return redirect(url_for('super_admin.schools'))
     
-    cursor.execute('SELECT * FROM schools ORDER BY id DESC')
+    cursor.execute('SELECT id, name, type, created_at FROM schools ORDER BY id DESC')
     schools = cursor.fetchall()
     return render_template('super_admin/schools.html', schools=schools)
 
@@ -73,10 +72,11 @@ def admins():
         flash(f'مدیر "{name}" اضافه شد', 'success')
         return redirect(url_for('super_admin.admins'))
     
-    # این query باید مدارس را بگیرد
-    cursor.execute('SELECT * FROM schools ORDER BY name')
-    schools = cursor.fetchall()  
+    # گرفتن لیست مدارس
+    cursor.execute('SELECT id, name, type FROM schools ORDER BY name ASC')
+    schools = cursor.fetchall()
     
+    # گرفتن لیست مدیران
     cursor.execute('''
         SELECT a.*, s.name as school_name, s.type as school_type
         FROM school_admins a
