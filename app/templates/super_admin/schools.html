@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% block title %}مدیریت مدارس{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>مدیریت مدارس</h2>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <i class="bi bi-plus-circle"></i> افزودن مدرسه جدید
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">نام مدرسه</label>
+                    <input type="text" name="name" class="form-control" 
+                           placeholder="مثال: مدرسه ابتدایی شهید بهشتی" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">نوع مدرسه</label>
+                    <select name="type" class="form-select" required>
+                        <option value="">انتخاب کنید</option>
+                        <option value="elementary">ابتدایی (توصیفی)</option>
+                        <option value="middle">متوسطه اول (نمره‌ای)</option>
+                        <option value="high">متوسطه دوم (نمره‌ای)</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-save"></i> ایجاد
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <i class="bi bi-list"></i> لیست مدارس
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>نام مدرسه</th>
+                    <th>نوع</th>
+                    <th>تاریخ ایجاد</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for school in schools %}
+                <tr>
+                    <td>{{ school.id }}</td>
+                    <td><strong>{{ school.name }}</strong></td>
+                    <td>
+                        <span class="badge bg-{{ 'info' if school.type == 'elementary' else 'warning' if school.type == 'middle' else 'danger' }}">
+                            {{ config.SCHOOL_TYPES.get(school.type) }}
+                        </span>
+                    </td>
+                    <td>{{ school.created_at }}</td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-outline-primary disabled">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-1"></i><br>
+                        هیچ مدرسه‌ای یافت نشد
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

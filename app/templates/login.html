@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-md-4">
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="bi bi-mortarboard-fill fs-1 text-primary"></i>
+                    <h3 class="mt-2">سیستم مدیریت مدرسه</h3>
+                    <p class="text-muted">ورود به پنل مدیریت</p>
+                </div>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">نام کاربری</label>
+                        <input type="text" name="username" class="form-control" 
+                               placeholder="نام کاربری خود را وارد کنید" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رمز عبور</label>
+                        <input type="password" name="password" class="form-control" 
+                               placeholder="رمز عبور خود را وارد کنید" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="bi bi-box-arrow-in-right"></i> ورود به سیستم
+                    </button>
+                </form>
+                
+                <hr class="my-4">
+                <div class="text-center">
+                    <small class="text-muted">
+                        <strong>Super Admin:</strong> superadmin / superadmin123<br>
+                        <span class="text-danger">در محیط production رمز را تغییر دهید!</span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

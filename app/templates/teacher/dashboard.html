@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block title %}داشبورد معلم{% endblock %}
+
+{% block content %}
+<h2>داشبورد معلم - کلاس‌های شما</h2>
+
+<div class="row">
+    {% for class in classes %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h4 class="card-title">{{ class.name }}</h4>
+                    <span class="badge bg-info">{{ class.grade }}</span>
+                </div>
+                <p class="card-text mt-2">
+                    <i class="bi bi-people"></i> تعداد دانش‌آموز: <strong>{{ class.student_count }}</strong>
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('teacher.grades', class_id=class.id) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil-square"></i> نمرات
+                    </a>
+                    <a href="{{ url_for('teacher.attendance', class_id=class.id) }}" class="btn btn-warning">
+                        <i class="bi bi-calendar-check"></i> حضور/غیاب
+                    </a>
+                    <a href="{{ url_for('teacher.discipline', class_id=class.id) }}" class="btn btn-danger">
+                        <i class="bi bi-exclamation-triangle"></i> انضباط
+                    </a>
+                    <a href="{{ url_for('teacher.skills', class_id=class.id) }}" class="btn btn-success">
+                        <i class="bi bi-star"></i> مهارت‌ها
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> شما به هیچ کلاسی اختصاص نیافته‌اید. با مدیر مدرسه تماس بگیرید.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

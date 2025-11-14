@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+{% block title %}مهارت‌ها - کلاس {{ class_info.name }}{% endblock %}
+
+{% block content %}
+<h2>ارزیابی مهارت‌ها - کلاس {{ class_info.name }} (پایه {{ class_info.grade }})</h2>
+
+<div class="card mb-3">
+    <div class="card-header bg-light">
+        <form method="GET" class="row">
+            <div class="col-md-4">
+                <label class="form-label">تاریخ</label>
+                <input type="date" name="date" class="form-control" 
+                       value="{{ selected_date }}" onchange="this.form.submit()">
+            </div>
+            <div class="col-md-8 align-self-end">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> برای مدیریت حافظه، فقط اطلاعات روز قابل ویرایش است
+                </small>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <i class="bi bi-plus-circle"></i> ثبت ارزیابی جدید
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">دانش‌آموز</label>
+                    <select name="student_id" class="form-select" required>
+                        <option value="">انتخاب کنید</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">مهارت</label>
+                    <select name="skill_id" class="form-select" required>
+                        {% for skill in skills %}
+                        <option value="{{ skill.id }}">{{ skill.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">سطح ارزیابی</label>
+                    <select name="level" class="form-select" required>
+                        <option value="excellent">عالی</option>
+                        <option value="very_good">خیلی خوب</option>
+                        <option value="good">خوب</option>
+                        <option value="needs_effort">نیاز به تلاش</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label class="form-label">یادداشت</label>
+                    <input type="text" name="notes" class="form-control" 
+                           placeholder="توضیحات اختیاری">
+                </div>
+                <div class="col-md-1 mb-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-save"></i> ثبت
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <i class="bi bi-list"></i> ارزیابی‌های ثبت‌شده در تاریخ {{ selected_date }}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>دانش‌آموز</th>
+                        <th>مهارت</th>
+                        <th>سطح</th>
+                        <th>یادداشت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in assessments %}
+                    <tr>
+                        <td><strong>{{ a.first_name }} {{ a.last_name }}</strong></td>
+                        <td>{{ a.skill_name }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if a.level == 'excellent' else 'primary' if a.level == 'very_good' else 'warning' if a.level == 'good' else 'danger' }}">
+                                {{ {'excellent':'عالی','very_good':'خیلی خوب','good':'خوب','needs_effort':'نیاز به تلاش'}[a.level] }}
+                            </span>
+                        </td>
+                        <td>{{ a.notes or '-' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger disabled">
+                                <i class="bi bi-trash"></i> حذف
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1"></i><br>
+                            ارزیابی مهارتی برای این تاریخ ثبت نشده است
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

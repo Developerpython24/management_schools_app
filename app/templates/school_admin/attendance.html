@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+{% block title %}مدیریت حضور و غیاب{% endblock %}
+
+{% block content %}
+<h2>مدیریت حضور و غیاب دانش‌آموزان</h2>
+
+<div class="card mb-3">
+    <div class="card-header bg-light">
+        <form method="GET" class="row">
+            <div class="col-md-4">
+                <label class="form-label">انتخاب تاریخ</label>
+                <input type="date" name="date" class="form-control" 
+                       value="{{ selected_date }}" onchange="this.form.submit()">
+            </div>
+            <div class="col-md-8 align-self-end">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> برای مدیریت حافظه، فقط اطلاعات روز نمایش داده می‌شود
+                </small>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <i class="bi bi-list"></i> حضور/غیاب ({{ records|length }})
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>کلاس</th>
+                        <th>دانش‌آموز</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ record.class_name }}</td>
+                        <td><strong>{{ record.first_name }} {{ record.last_name }}</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if record.status == 'present' else 'warning' if record.status == 'late' else 'danger' }}">
+                                {{ 'حاضر' if record.status == 'present' else 'با تاخیر' if record.status == 'late' else 'غایب' }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary disabled">
+                                <i class="bi bi-pencil"></i> ویرایش
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1"></i><br>
+                            رکوردی برای این تاریخ یافت نشد
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+{% block title %}مدیریت کلاس‌ها{% endblock %}
+
+{% block content %}
+<h2>مدیریت کلاس‌ها</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <i class="bi bi-plus-circle"></i> افزودن کلاس جدید
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="name" class="form-control" 
+                           placeholder="نام کلاس (مثال: 4A)" required>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="grade" class="form-control" 
+                           placeholder="پایه (مثال: چهارم)" required>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <select name="teacher_id" class="form-select">
+                        <option value="">انتخاب معلم (اختیاری)</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <input type="text" name="room" class="form-control" 
+                           placeholder="شماره کلاس">
+                </div>
+                <div class="col-md-1 mb-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <i class="bi bi-list"></i> لیست کلاس‌ها ({{ classes|length }})
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>نام کلاس</th>
+                        <th>پایه</th>
+                        <th>معلم</th>
+                        <th>شماره کلاس</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for class in classes %}
+                    <tr>
+                        <td>{{ class.id }}</td>
+                        <td><strong>{{ class.name }}</strong></td>
+                        <td>{{ class.grade }}</td>
+                        <td>{{ class.teacher_name or '-' }}</td>
+                        <td>{{ class.room or '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('school_admin.assign_students', class_id=class.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-people"></i> تخصیص دانش‌آموز
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1"></i><br>
+                            کلاسی ثبت نشده است
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

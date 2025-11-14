@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+{% block title %}مدیریت معلمان{% endblock %}
+
+{% block content %}
+<h2>مدیریت معلمان</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <i class="bi bi-person-plus"></i> افزودن معلم جدید
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="username" class="form-control" 
+                           placeholder="نام کاربری" required>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="password" name="password" class="form-control" 
+                           placeholder="رمز عبور" required>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="name" class="form-control" 
+                           placeholder="نام کامل" required>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="phone" class="form-control" 
+                           placeholder="شماره تماس">
+                </div>
+                <div class="col-md-12 mb-2">
+                    <label class="form-label">دروس تدریس (می‌توانید انتخاب نکنید)</label>
+                    <select name="subjects" class="form-select" multiple size="3">
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }} (پایه {{ subject.grade }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-save"></i> افزودن معلم
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <i class="bi bi-list"></i> لیست معلمان ({{ teachers|length }})
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>نام</th>
+                        <th>نام کاربری</th>
+                        <th>شماره تماس</th>
+                        <th>دروس</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers %}
+                    <tr>
+                        <td>{{ teacher.id }}</td>
+                        <td><strong>{{ teacher.name }}</strong></td>
+                        <td><code>{{ teacher.username }}</code></td>
+                        <td dir="ltr">{{ teacher.phone or '-' }}</td>
+                        <td>
+                            {% if teacher.subjects %}
+                                <small>{{ teacher.subjects[:30] }}{% if teacher.subjects|length > 30 %}...{% endif %}</small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary disabled">
+                                <i class="bi bi-pencil"></i> ویرایش
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1"></i><br>
+                            هیچ معلمی ثبت نشده است
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

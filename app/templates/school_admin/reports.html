@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block title %}گزارشات{% endblock %}
+
+{% block content %}
+<h2>گزارشات دانش‌آموزان</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <i class="bi bi-funnel"></i> فیلتر گزارش
+    </div>
+    <div class="card-body">
+        <form method="POST" class="row">
+            <div class="col-md-4">
+                <label class="form-label">نوع گزارش</label>
+                <select name="report_type" class="form-select" required>
+                    <option value="student">فردی</option>
+                    <option value="class">کلاسی</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">دانش‌آموز/کلاس</label>
+                <select name="target_id" class="form-select" required>
+                    <optgroup label="دانش‌آموزان">
+                        {% for student in students %}
+                        <option value="student_{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="کلاس‌ها">
+                        {% for class in classes %}
+                        <option value="class_{{ class.id }}">{{ class.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">از تاریخ</label>
+                <input type="date" name="start_date" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">تا تاریخ</label>
+                <input type="date" name="end_date" class="form-control" required>
+            </div>
+            <div class="col-md-12 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-file-bar-graph"></i> تولید گزارش
+                </button>
+                <button type="submit" name="export" value="excel" class="btn btn-success">
+                    <i class="bi bi-download"></i> خروجی Excel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if report_data %}
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <i class="bi bi-file-earmark"></i> نتیجه گزارش
+    </div>
+    <div class="card-body">
+        <pre>{{ report_data|pprint }}</pre>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> برای مشاهده گزارش، فرم بالا را تکمیل کنید.
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block title %}مدیریت دروس{% endblock %}
+
+{% block content %}
+<h2>مدیریت دروس</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-plus-circle"></i> افزودن درس جدید
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <input type="text" name="name" class="form-control" 
+                                   placeholder="نام درس" required>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <select name="grade" class="form-select" required>
+                                <option value="">پایه</option>
+                                {% for grade in grades %}
+                                <option value="{{ grade }}">{{ grade }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-book"></i> لیست دروس ({{ subjects|length }})
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>درس</th>
+                            <th>پایه</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subject in subjects %}
+                        <tr>
+                            <td><strong>{{ subject.name }}</strong></td>
+                            <td>{{ subject.grade }}</td>
+                            <td>
+                                <span class="text-muted small">غیرقابل ویرایش</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                درسی یافت نشد
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% block title %}تنظیمات مدرسه{% endblock %}
+
+{% block content %}
+<h2>تنظیمات مدرسه و مدیر</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-light">
+                <i class="bi bi-gear"></i> ویرایش اطلاعات
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام مدرسه</label>
+                            <input type="text" name="school_name" class="form-control" 
+                                   value="{{ school.name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نام مدیر</label>
+                            <input type="text" name="admin_name" class="form-control" 
+                                   value="{{ admin.name }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">شماره تماس مدیر</label>
+                            <input type="text" name="phone" class="form-control" 
+                                   value="{{ admin.phone or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رمز عبور جدید (اختیاری)</label>
+                            <input type="password" name="new_password" class="form-control" 
+                                   placeholder="برای تغییر رمز وارد کنید">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> ذخیره تغییرات
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-info-circle"></i> راهنما
+            </div>
+            <div class="card-body">
+                <ul class="small">
+                    <li>نام مدرسه در تمام گزارشات نمایش داده می‌شود</li>
+                    <li>رمز عبور را در محیط‌های public حتماً تغییر دهید</li>
+                    <li>Super Admin می‌تواند بدون رمز وارد پنل شما شود</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

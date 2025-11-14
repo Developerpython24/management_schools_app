@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: school-management
+    env: python
+    buildCommand: "pip install -r requirements.txt && chmod +x build.sh && ./build.sh"
+    startCommand: "gunicorn -c gunicorn_config.py run:app"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SUPER_ADMIN_PASSWORD
+        generateValue: true
+      - key: DATABASE_DIR
+        value: /opt/render/project/src/databases
+      - key: SMS_ACTIVE
+        value: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
