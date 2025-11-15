@@ -2,16 +2,41 @@ services:
   - type: web
     name: school-management
     env: python
-    buildCommand: "pip install -r requirements.txt && chmod +x build.sh && ./build.sh"
-    startCommand: "gunicorn -c gunicorn_config.py run:app"
+    region: frankfurt # منطقه اروپا برای کاربران ایرانی
+    plan: starter
+    rootDir: /
+    buildCommand: |
+      echo "🚀 Starting secure build process..."
+      pip install -r requirements.txt
+      echo "✅ Dependencies installed"
+      flask db upgrade
+      echo "✅ Database migrated"
+    startCommand: "gunicorn --worker-class gevent --workers 3 --timeout 60 --bind 0.0.0.0:$PORT run:app"
     envVars:
+      - key: FLASK_ENV
+        value: production
       - key: SECRET_KEY
-        generateValue: true
+        generateValue: true # render.com یک کلید تصادفی امن تولید می‌کند
+      - key: SUPER_ADMIN_USERNAME
+        sync: false # باید دستی تنظیم شود
       - key: SUPER_ADMIN_PASSWORD
-        generateValue: true
-      - key: DATABASE_DIR
-        value: /opt/render/project/src/databases
+        generateValue: true # render.com یک رمز عبور قوی تولید می‌کند
+      - key: DATABASE_URL
+        fromDatabase:
+          name: school-db
+          property: connectionString
       - key: SMS_ACTIVE
-        value: false
-      - key: PYTHON_VERSION
-        value: 3.11.0
+        value: "False"
+      - key: MAIL_USE_TLS
+        value: "True"
+    healthCheckPath: /health
+    healthCheckInterval: 60
+    autoDeploy: true
+
+databases:
+  - name: school-db
+    databaseName: school_management
+    user: school_user
+    plan: starter
+    ipAllowList:
+      - source: 0.0.0.0/0 # فقط برای توسعه - در production محدود کنید
