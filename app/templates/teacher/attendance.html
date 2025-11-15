@@ -1,76 +1,436 @@
-{% extends "layout.html" %}
-{% block title %}حضور و غیاب - کلاس {{ class_info.name }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}حضور و غیاب{% endblock %}
 
 {% block content %}
-<h2>حضور و غیاب - کلاس {{ class_info.name }} (پایه {{ class_info.grade }})</h2>
-
-<div class="card mb-3">
-    <div class="card-header bg-light">
-        <form method="GET" class="row">
-            <div class="col-md-4">
-                <label class="form-label">تاریخ</label>
-                <input type="date" name="date" class="form-control" 
-                       value="{{ selected_date }}" onchange="this.form.submit()">
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-calendar-check me-2 text-primary"></i>
+                    حضور و غیاب کلاس
+                </h1>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success" id="send-sms-all" 
+                            {% if not any_unnotified %}disabled{% endif %}
+                            title="ارسال پیامک به همه والدین دانش‌آموزان غایب/با تأخیر">
+                        <i class="fas fa-sms me-1"></i>
+                        ارسال همه پیامک‌ها
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="auto-detect" title="تشخیص خودکار">
+                        <i class="fas fa-magic me-1"></i>
+                        تشخیص خودکار
+                    </button>
+                </div>
             </div>
-            <div class="col-md-8 align-self-end">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> برای مدیریت حافظه، فقط اطلاعات روز قابل ویرایش است
-                </small>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('teacher.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">حضور و غیاب</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- اطلاعات کلاس و فیلتر تاریخ -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chalkboard me-2"></i>
+                        {{ class_info.name }} ({{ class_info.grade }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-user-graduate me-2 text-muted"></i>
+                            <strong>تعداد دانش‌آموزان:</strong>
+                            <span class="float-end badge bg-primary">{{ students|length }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-chalkboard-teacher me-2 text-muted"></i>
+                            <strong>معلم کلاس:</strong>
+                            <span class="float-end badge bg-success">{{ teacher_name }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-book me-2 text-muted"></i>
+                            <strong>درس:</strong>
+                            <span class="float-end badge bg-info">{{ subject_name or 'بدون درس' }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-door-open me-2 text-muted"></i>
+                            <strong>شماره کلاس:</strong>
+                            <span class="float-end badge bg-warning">{{ class_info.room or 'تعیین نشده' }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </form>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    انتخاب تاریخ
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('teacher.attendance', class_id=class_id) }}" class="row g-2">
+                        <div class="col-md-8">
+                            <input type="date" name="date" class="form-control" 
+                                   value="{{ selected_date }}" max="{{ today.isoformat() }}"
+                                   required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                نمایش
+                            </button>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="btn-group w-100">
+                                <a href="{{ url_for('teacher.attendance', class_id=class_id, date=(selected_date | add_days(-1)).isoformat()) }}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary">
+                                    {{ selected_date | format_persian_date }}
+                                </button>
+                                <a href="{{ url_for('teacher.attendance', class_id=class_id, date=(selected_date | add_days(1)).isoformat()) }}" 
+                                   class="btn btn-outline-secondary {% if selected_date >= today %}disabled{% endif %}">
+                                    <i class="fas fa-arrow-left"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
-
-<div class="card">
-    <div class="card-header bg-secondary text-white">
-        <i class="bi bi-list"></i> وضعیت حضور دانش‌آموزان در تاریخ {{ selected_date }}
-    </div>
-    <div class="card-body">
-        <form method="POST">
-            <div class="row">
-                {% for student in students %}
-                <div class="col-md-4 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-title">{{ student.first_name }} {{ student.last_name }}</h6>
-                            <div class="btn-group w-100" role="group">
-                                <input type="radio" name="status_{{ student.id }}" 
-                                       value="present" 
-                                       id="present_{{ student.id }}"
-                                       {{ 'checked' if attendance[student.id] == 'present' else '' }}>
-                                <label class="btn btn-outline-success" 
-                                       for="present_{{ student.id }}">
-                                    <i class="bi bi-check-circle"></i> حاضر
-                                </label>
-                                
-                                <input type="radio" name="status_{{ student.id }}" 
-                                       value="late" 
-                                       id="late_{{ student.id }}"
-                                       {{ 'checked' if attendance[student.id] == 'late' else '' }}>
-                                <label class="btn btn-outline-warning" 
-                                       for="late_{{ student.id }}">
-                                    <i class="bi bi-clock-history"></i> تاخیر
-                                </label>
-                                
-                                <input type="radio" name="status_{{ student.id }}" 
-                                       value="absent" 
-                                       id="absent_{{ student.id }}"
-                                       {{ 'checked' if attendance[student.id] == 'absent' else '' }}>
-                                <label class="btn btn-outline-danger" 
-                                       for="absent_{{ student.id }}">
-                                    <i class="bi bi-x-circle"></i> غایب
-                                </label>
+    
+    <!-- خلاصه حضور و غیاب -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-chart-pie me-2"></i>
+                        خلاصه حضور و غیاب
+                    </span>
+                    <span class="badge bg-primary">{{ selected_date | format_persian_date }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-1 row-cols-md-4 g-4">
+                        <div class="col">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-primary">
+                                        <i class="fas fa-user-check fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.present_count }}</h3>
+                                    <p class="stat-label mb-0">حاضر</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (stats.present_count / stats.total_count * 100) | round(1) }}%" aria-valuenow="{{ (stats.present_count / stats.total_count * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-danger">
+                                        <i class="fas fa-user-times fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.absent_count }}</h3>
+                                    <p class="stat-label mb-0">غایب</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (stats.absent_count / stats.total_count * 100) | round(1) }}%" aria-valuenow="{{ (stats.absent_count / stats.total_count * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-warning">
+                                        <i class="fas fa-user-clock fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.late_count }}</h3>
+                                    <p class="stat-label mb-0">با تأخیر</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (stats.late_count / stats.total_count * 100) | round(1) }}%" aria-valuenow="{{ (stats.late_count / stats.total_count * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-success">
+                                        <i class="fas fa-percentage fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ "%.1f" | format((stats.present_count / stats.total_count * 100)) }}%</h3>
+                                    <p class="stat-label mb-0">درصد حضور</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-            <hr>
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-save"></i> ثبت حضور/غیاب
-            </button>
-        </form>
+        </div>
+    </div>
+    
+    <!-- لیست دانش‌آموزان و وضعیت حضور و غیاب -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-list me-2"></i>
+                        لیست دانش‌آموزان
+                    </span>
+                    <div class="col-md-3">
+                        <input type="text" id="search-students" class="form-control" placeholder="جستجو...">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('teacher.attendance', class_id=class_id) }}" id="attendance-form">
+                        <input type="hidden" name="date" value="{{ selected_date }}">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="students-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%">#</th>
+                                        <th style="width: 25%">دانش‌آموز</th>
+                                        <th style="width: 15%">کد</th>
+                                        <th style="width: 20%">وضعیت فعلی</th>
+                                        <th style="width: 20%">وضعیت جدید</th>
+                                        <th style="width: 15%">شماره والدین</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr>
+                                        <td class="align-middle">
+                                            <span class="badge bg-primary rounded-pill">{{ loop.index }}</span>
+                                        </td>
+                                        <td class="align-middle fw-bold">
+                                            {{ student.full_name }}
+                                            <small class="d-block text-muted">{{ student.grade }}</small>
+                                        </td>
+                                        <td class="align-middle">
+                                            <code>{{ student.code }}</code>
+                                        </td>
+                                        <td class="align-middle">
+                                            {% set current_status = attendance.get(student.id) %}
+                                            {% if current_status %}
+                                                <span class="status-badge {{ current_status.status }}">
+                                                    {{ current_status.status_fa }}
+                                                </span>
+                                                <small class="d-block text-muted mt-1">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    {{ current_status.created_at.strftime('%H:%M') }}
+                                                </small>
+                                            {% else %}
+                                                <span class="text-muted">ثبت نشده</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle">
+                                            <div class="btn-group w-100" role="group">
+                                                <input type="radio" class="btn-check" name="status_{{ student.id }}" 
+                                                       id="present_{{ student.id }}" value="present" autocomplete="off"
+                                                       {% if not current_status or current_status.status == 'present' %}checked{% endif %}>
+                                                <label class="btn btn-sm {% if not current_status or current_status.status == 'present' %}btn-primary{% else %}btn-outline-primary{% endif %}" 
+                                                       for="present_{{ student.id }}" title="حاضر">
+                                                    <i class="fas fa-check"></i>
+                                                </label>
+                                                
+                                                <input type="radio" class="btn-check" name="status_{{ student.id }}" 
+                                                       id="absent_{{ student.id }}" value="absent" autocomplete="off"
+                                                       {% if current_status and current_status.status == 'absent' %}checked{% endif %}>
+                                                <label class="btn btn-sm {% if current_status and current_status.status == 'absent' %}btn-danger{% else %}btn-outline-danger{% endif %}" 
+                                                       for="absent_{{ student.id }}" title="غایب">
+                                                    <i class="fas fa-times"></i>
+                                                </label>
+                                                
+                                                <input type="radio" class="btn-check" name="status_{{ student.id }}" 
+                                                       id="late_{{ student.id }}" value="late" autocomplete="off"
+                                                       {% if current_status and current_status.status == 'late' %}checked{% endif %}>
+                                                <label class="btn btn-sm {% if current_status and current_status.status == 'late' %}btn-warning{% else %}btn-outline-warning{% endif %}" 
+                                                       for="late_{{ student.id }}" title="با تأخیر">
+                                                    <i class="fas fa-clock"></i>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            {% if student.parent_phone %}
+                                                <a href="tel:{{ student.parent_phone }}" class="text-decoration-none">
+                                                    <i class="fas fa-phone me-1"></i>{{ student.parent_phone }}
+                                                </a>
+                                                <br>
+                                                <button type="button" class="btn btn-sm btn-outline-info mt-1 send-sms" 
+                                                        data-student-id="{{ student.id }}" 
+                                                        data-student-name="{{ student.full_name }}"
+                                                        data-phone="{{ student.parent_phone }}"
+                                                        {% if not current_status or current_status.status in ['present'] %}disabled{% endif %}
+                                                        title="ارسال پیامک">
+                                                    <i class="fas fa-sms me-1"></i>ارسال پیامک
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted">ثبت نشده</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="text-muted">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                هیچ دانش‌آموزی در این کلاس وجود ندارد
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer bg-light mt-3 text-end">
+                            <button type="submit" class="btn btn-primary px-4 py-2">
+                                <i class="fas fa-save me-1"></i>
+                                ذخیره حضور و غیاب
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال تأیید ارسال پیامک -->
+<div class="modal fade" id="smsConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-sms me-2"></i>
+                    تأیید ارسال پیامک
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">
+                    آیا مطمئن هستید که می‌خواهید پیامک 
+                    <span class="fw-bold text-danger" id="sms-status-text">غیبت</span>
+                    برای دانش‌آموز 
+                    <span class="fw-bold text-primary" id="student-name-text">نام دانش‌آموز</span>
+                    به شماره 
+                    <span class="fw-bold" id="phone-number-text">شماره تلفن</span>
+                    ارسال کنید؟
+                </p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <small>
+                        این عملیات ممکن است هزینه‌بر باشد. لطفاً قبل از تأیید، صحت اطلاعات را بررسی کنید.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-info" id="confirm-send-sms">
+                    <i class="fas fa-paper-plane me-1"></i>
+                    تأیید و ارسال
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال تأیید ارسال همه پیامک‌ها -->
+<div class="modal fade" id="bulkSmsConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-sms me-2"></i>
+                    تأیید ارسال همه پیامک‌ها
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">
+                    آیا مطمئن هستید که می‌خواهید پیامک‌های حضور و غیاب را برای 
+                    <span class="fw-bold text-danger" id="absent-count-text">0</span>
+                    دانش‌آموز غایب و 
+                    <span class="fw-bold text-warning" id="late-count-text">0</span>
+                    دانش‌آموز با تأخیر ارسال کنید؟
+                </p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <small>
+                        این عملیات برای 
+                        <span class="fw-bold" id="total-sms-count-text">0</span>
+                        دانش‌آموز انجام خواهد شد و ممکن است هزینه‌بر باشد.
+                    </small>
+                </div>
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirm-bulk-sms" required>
+                    <label class="form-check-label" for="confirm-bulk-sms">
+                        تأیید می‌کنم که می‌خواهم این عملیات را انجام دهم
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-success" id="confirm-bulk-sms" disabled>
+                    <i class="fas fa-paper-plane me-1"></i>
+                    تأیید و ارسال همه پیامک‌ها
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Student search
+        document.getElementById('search-students').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#students-table tbody tr');
+            
+            rows.forEach(row => {
+                const studentName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const studentCode = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                
+                if (studentName.includes(searchTerm) || studentCode.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Individual SMS buttons
+        document.querySelectorAll('.send-sms').forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-student-id');
+                const studentName = this.getAttribute('data-student-name');
+                const phoneNumber = this.getAttribute('data-phone');
+                const currentStatus = document.querySelector(`input[name="status_${studentId}"]:checked`).value;
+                
+                document.getElementById('student-name-text').textContent = student
