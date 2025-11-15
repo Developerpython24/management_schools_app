@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش دانش‌آموز{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-edit me-2 text-warning"></i>
+                    ویرایش دانش‌آموز: {{ student.full_name }}
+                </h1>
+                <a href="{{ url_for('school_admin.students') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    بازگشت به لیست
+                </a>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('school_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('school_admin.students') }}">دانش‌آموزان</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">ویرایش دانش‌آموز</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <i class="fas fa-user-graduate me-2"></i>
+                    فرم ویرایش دانش‌آموز
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('school_admin.edit_student', student_id=student.id) }}" class="needs-validation" novalidate>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">کد دانش‌آموز <span class="text-danger">*</span></label>
+                                <input type="text" name="code" class="form-control" value="{{ student.code }}" required>
+                                <div class="invalid-feedback">کد دانش‌آموز الزامی است</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">پایه <span class="text-danger">*</span></label>
+                                <select name="grade" class="form-select" required>
+                                    <option value="">انتخاب پایه</option>
+                                    {% for grade in grades %}
+                                        <option value="{{ grade }}" {% if grade == student.grade %}selected{% endif %}>{{ grade }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">پایه الزامی است</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">نام <span class="text-danger">*</span></label>
+                                <input type="text" name="first_name" class="form-control" value="{{ student.first_name }}" required>
+                                <div class="invalid-feedback">نام الزامی است</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">نام خانوادگی <span class="text-danger">*</span></label>
+                                <input type="text" name="last_name" class="form-control" value="{{ student.last_name }}" required>
+                                <div class="invalid-feedback">نام خانوادگی الزامی است</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">شماره والدین</label>
+                                <input type="text" name="parent_phone" class="form-control" value="{{ student.parent_phone or '' }}" placeholder="09123456789">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ایمیل والدین</label>
+                                <input type="email" name="parent_email" class="form-control" value="{{ student.parent_email or '' }}" placeholder="parent@example.com">
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <small>
+                                        تغییر پایه دانش‌آموز ممکن است بر کلاس‌های فعلی او تأثیر بگذارد. برای جابجایی کلاس، از بخش «تخصیص دانش‌آموزان» استفاده کنید.
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-warning px-4 py-2">
+                                    <i class="fas fa-save me-1"></i>
+                                    ذخیره تغییرات
+                                </button>
+                                <a href="{{ url_for('school_admin.students') }}" class="btn btn-secondary px-4 py-2">
+                                    <i class="fas fa-times me-1"></i>
+                                    انصراف
+                                </a>
+                                <button type="button" class="btn btn-danger px-4 py-2 float-end" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                    <i class="fas fa-trash me-1"></i>
+                                    حذف دانش‌آموز
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال حذف دانش‌آموز -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    تأیید حذف دانش‌آموز
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">
+                    آیا مطمئن هستید که می‌خواهید دانش‌آموز <strong>{{ student.full_name }}</strong> را حذف کنید؟
+                </p>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <small>
+                        این عمل غیرقابل بازگشت است. تمام نمرات، حضور و غیاب و سوابق دانش‌آموز حذف خواهد شد.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    انصراف
+                </button>
+                <a href="{{ url_for('school_admin.delete_student', student_id=student.id) }}" class="btn btn-danger">
+                    <i class="fas fa-check me-1"></i>
+                    تأیید حذف
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
