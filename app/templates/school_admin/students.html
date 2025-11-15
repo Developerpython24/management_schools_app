@@ -1,116 +1,281 @@
-{% extends "layout.html" %}
-{% block title %}مدیریت دانش‌آموزان{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}دانش‌آموزان{% endblock %}
 
 {% block content %}
-<h2>مدیریت دانش‌آموزان</h2>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header bg-success text-white">
-                <i class="bi bi-person-plus"></i> افزودن دستی دانش‌آموز
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-user-graduate me-2 text-primary"></i>
+                    مدیریت دانش‌آموزان
+                </h1>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                        <i class="fas fa-file-excel me-1"></i>
+                        وارد کردن اکسل
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                        <i class="fas fa-plus me-1"></i>
+                        دانش‌آموز جدید
+                    </button>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    <div class="row">
-                        <div class="col-md-6 mb-2">
-                            <input type="text" name="code" class="form-control" 
-                                   placeholder="کد دانش‌آموزی" required>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('school_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">دانش‌آموزان</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- فیلترها و جستجو -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('school_admin.students') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">جستجو</label>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="نام، نام خانوادگی یا کد دانش‌آموز..." 
+                                   value="{{ search_query }}">
                         </div>
-                        <div class="col-md-6 mb-2">
-                            <input type="text" name="first_name" class="form-control" 
-                                   placeholder="نام" required>
+                        <div class="col-md-3">
+                            <label class="form-label">پایه</label>
+                            <select name="grade" class="form-select">
+                                <option value="">همه پایه‌ها</option>
+                                {% for grade in grades %}
+                                    <option value="{{ grade }}" {% if selected_grade == grade %}selected{% endif %}>{{ grade }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        <div class="col-md-6 mb-2">
-                            <input type="text" name="last_name" class="form-control" 
-                                   placeholder="نام خانوادگی" required>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <input type="text" name="grade" class="form-control" 
-                                   placeholder="پایه (مثال: چهارم)" required>
-                        </div>
-                        <div class="col-md-12 mb-2">
-                            <input type="text" name="parent_phone" class="form-control" 
-                                   placeholder="شماره تماس والدین">
-                        </div>
-                        <div class="col-md-12">
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="bi bi-save"></i> افزودن
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                جستجو
                             </button>
                         </div>
-                    </div>
-                </form>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{{ url_for('school_admin.students') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-1"></i>
+                                بازنشانی
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <i class="bi bi-file-earmark-excel"></i> ورود از فایل اکسل
-            </div>
-            <div class="card-body">
-                <form method="POST" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label">انتخاب فایل (.xlsx)</label>
-                        <input type="file" name="excel_file" class="form-control" 
-                               accept=".xlsx,.xls" required>
-                        <small class="form-text text-muted">
-                            ستون‌های مورد نیاز: کد, نام, نام خانوادگی, پایه, شماره والدین
-                        </small>
+    <!-- لیست دانش‌آموزان -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2"></i>
+                    لیست دانش‌آموزان
+                    <span class="badge bg-primary rounded-pill ms-2">{{ pagination.total }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>کد</th>
+                                    <th>نام و نام خانوادگی</th>
+                                    <th>پایه</th>
+                                    <th>شماره والدین</th>
+                                    <th>ایمیل والدین</th>
+                                    <th>تاریخ ثبت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</span>
+                                    </td>
+                                    <td>
+                                        <code>{{ student.code }}</code>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ student.full_name }}</div>
+                                        {% if student.parent_phone %}
+                                            <small class="text-muted">{{ student.parent_phone }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ student.grade }}</span>
+                                    </td>
+                                    <td>
+                                        {% if student.parent_phone %}
+                                            <a href="tel:{{ student.parent_phone }}" class="text-decoration-none">
+                                                <i class="fas fa-phone me-1"></i>{{ student.parent_phone }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">ثبت نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if student.parent_email %}
+                                            <a href="mailto:{{ student.parent_email }}" class="text-decoration-none">
+                                                <i class="fas fa-envelope me-1"></i>{{ student.parent_email }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">ثبت نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ student.created_at.strftime('%Y/%m/%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('school_admin.edit_student', student_id=student.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('school_admin.delete_student', student_id=student.id) }}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="حذف"
+                                               data-confirm="آیا مطمئن هستید که می‌خواهید دانش‌آموز '{{ student.full_name }}' را حذف کنید؟">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ دانش‌آموزی یافت نشد
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    <button type="submit" class="btn btn-info w-100">
-                        <i class="bi bi-upload"></i> بارگذاری
-                    </button>
-                </form>
+                </div>
+                <div class="card-footer">
+                    {% include 'partials/pagination.html' %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header bg-secondary text-white">
-        <i class="bi bi-list"></i> لیست دانش‌آموزان ({{ students|length }})
+<!-- مودال ایجاد دانش‌آموز جدید -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-graduate me-2"></i>
+                    ایجاد دانش‌آموز جدید
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('school_admin.students') }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">کد دانش‌آموز <span class="text-danger">*</span></label>
+                            <input type="text" name="code" class="form-control" required>
+                            <div class="invalid-feedback">کد دانش‌آموز الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">پایه <span class="text-danger">*</span></label>
+                            <select name="grade" class="form-select" required>
+                                <option value="">انتخاب پایه</option>
+                                {% for grade in grades %}
+                                    <option value="{{ grade }}">{{ grade }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">پایه الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">نام <span class="text-danger">*</span></label>
+                            <input type="text" name="first_name" class="form-control" required>
+                            <div class="invalid-feedback">نام الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">نام خانوادگی <span class="text-danger">*</span></label>
+                            <input type="text" name="last_name" class="form-control" required>
+                            <div class="invalid-feedback">نام خانوادگی الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">شماره والدین</label>
+                            <input type="text" name="parent_phone" class="form-control" placeholder="09123456789">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ایمیل والدین</label>
+                            <input type="email" name="parent_email" class="form-control" placeholder="parent@example.com">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        ثبت دانش‌آموز
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>کد</th>
-                        <th>نام و نام خانوادگی</th>
-                        <th>پایه</th>
-                        <th>شماره والدین</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr>
-                        <td>{{ student.id }}</td>
-                        <td><code>{{ student.code }}</code></td>
-                        <td><strong>{{ student.first_name }} {{ student.last_name }}</strong></td>
-                        <td>{{ student.grade }}</td>
-                        <td dir="ltr">{{ student.parent_phone or '-' }}</td>
-                        <td>
-                            <a href="{{ url_for('school_admin.delete_student', student_id=student.id) }}" 
-                               class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('آیا مطمئن هستید؟')">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
-                            <i class="bi bi-inbox fs-1"></i><br>
-                            هیچ دانش‌آموزی ثبت نشده است
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+</div>
+
+<!-- مودال وارد کردن اکسل -->
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-excel me-2"></i>
+                    وارد کردن دانش‌آموزان از اکسل
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('school_admin.students') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">فایل اکسل <span class="text-danger">*</span></label>
+                        <input type="file" name="excel_file" class="form-control" accept=".xlsx, .xls" required>
+                        <small class="text-muted mt-1">
+                            <i class="fas fa-info-circle me-1"></i>
+                            ستون‌های مورد نیاز: کد، نام، نام خانوادگی، پایه، شماره والدین (اختیاری)
+                        </small>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-download me-1"></i>
+                        <a href="{{ url_for('school_admin.download_template') }}" class="text-decoration-none">
+                            دانلود فایل نمونه
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-upload me-1"></i>
+                        وارد کردن
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
