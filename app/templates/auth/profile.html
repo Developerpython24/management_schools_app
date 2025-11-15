@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}پروفایل کاربر{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-user me-2 text-primary"></i>
+                پروفایل کاربری
+            </h1>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('auth.index') }}">خانه</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">پروفایل</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; font-size: 3rem;">
+                            <span class="fw-bold">{{ current_user.name[0] if current_user.name else 'U' }}</span>
+                        </div>
+                    </div>
+                    <h4 class="mb-1 fw-bold">{{ current_user.name }}</h4>
+                    <p class="text-muted mb-3">
+                        {% if current_user.is_super_admin %}
+                            <span class="badge bg-danger">Super Admin</span>
+                        {% elif current_user.is_school_admin %}
+                            <span class="badge bg-primary">مدیر مدرسه</span>
+                        {% elif current_user.is_teacher %}
+                            <span class="badge bg-success">معلم</span>
+                        {% endif %}
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('auth.settings') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-1"></i>
+                            تنظیمات حساب
+                        </a>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                            خروج از سیستم
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-info-circle me-2"></i>
+                    اطلاعات تماس
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-user me-2 text-primary"></i>
+                            <strong>نام کاربری:</strong>
+                            <span class="float-end">{{ current_user.username }}</span>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-envelope me-2 text-primary"></i>
+                            <strong>ایمیل:</strong>
+                            <span class="float-end">
+                                {% if current_user.email %}
+                                    {{ current_user.email }}
+                                {% else %}
+                                    <span class="text-muted">ثبت نشده</span>
+                                {% endif %}
+                            </span>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-phone me-2 text-primary"></i>
+                            <strong>شماره تماس:</strong>
+                            <span class="float-end">
+                                {% if current_user.phone %}
+                                    {{ current_user.phone }}
+                                {% else %}
+                                    <span class="text-muted">ثبت نشده</span>
+                                {% endif %}
+                            </span>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-clock me-2 text-primary"></i>
+                            <strong>عضویت:</strong>
+                            <span class="float-end">{{ current_user.created_at.strftime('%Y/%m/%d') }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-chart-line me-2"></i>
+                    فعالیت‌های اخیر
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>تاریخ</th>
+                                    <th>فعالیت</th>
+                                    <th>جزئیات</th>
+                                    <th>وضعیت</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activities %}
+                                <tr>
+                                    <td>
+                                        <small class="text-muted">{{ activity.timestamp.strftime('%Y/%m/%d %H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">{{ activity.action_fa }}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ activity.description | truncate(30) }}</small>
+                                    </td>
+                                    <td>
+                                        {% if activity.success %}
+                                            <span class="badge bg-success">موفق</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">ناموفق</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ فعالیتی ثبت نشده است
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-cog me-2"></i>
+                    تنظیمات پیشرفته
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">زبان سیستم</label>
+                            <select class="form-select" disabled>
+                                <option value="fa" selected>فارسی</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">قالب نمایش</label>
+                            <select class="form-select" id="theme-select">
+                                <option value="light">روشن</option>
+                                <option value="dark" {% if session.get('theme') == 'dark' %}selected{% endif %}>تیره</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">تعداد موارد در هر صفحه</label>
+                            <select class="form-select" id="items-per-page">
+                                <option value="10" {% if session.get('items_per_page', 15) == 10 %}selected{% endif %}>10 مورد</option>
+                                <option value="15" {% if session.get('items_per_page', 15) == 15 %}selected{% endif %}>15 مورد</option>
+                                <option value="20" {% if session.get('items_per_page', 15) == 20 %}selected{% endif %}>20 مورد</option>
+                                <option value="50" {% if session.get('items_per_page', 15) == 50 %}selected{% endif %}>50 مورد</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-success px-4 py-2" id="save-preferences">
+                                <i class="fas fa-save me-1"></i>
+                                ذخیره تنظیمات
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Save user preferences
+        document.getElementById('save-preferences').addEventListener('click', function() {
+            const theme = document.getElementById('theme-select').value;
+            const itemsPerPage = document.getElementById('items-per-page').value;
+            
+            fetch('/save-preferences', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ theme, items_per_page: itemsPerPage })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تنظیمات با موفقیت ذخیره شد');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving preferences:', error);
+                alert('خطا در ذخیره تنظیمات');
+            });
+        });
+        
+        // Theme switcher
+        const themeSelect = document.getElementById('theme-select');
+        themeSelect.addEventListener('change', function() {
+            const theme = this.value;
+            document.body.classList.toggle('dark-mode', theme === 'dark');
+        });
+        
+        // Initialize theme
+        if (sessionStorage.getItem('theme') === 'dark' || '{{ session.get("theme") }}' === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('theme-select').value = 'dark';
+        }
+    });
+</script>
+{% endblock %}
