@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}ورود به عنوان مدیر{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-user-secret me-2 text-info"></i>
+                ورود به عنوان مدیر مدرسه
+            </h1>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">ورود به عنوان مدیر</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-info-circle me-2"></i>
+                    راهنمای استفاده
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        این عملکرد فقط برای عیب‌یابی و پشتیبانی استفاده شود. تمام فعالیت‌های شما در حالت ورود به عنوان دیگران ثبت و ذخیره می‌شود.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-list me-2"></i>
+                        لیست مدیران مدرسه
+                    </span>
+                    <div class="col-md-4">
+                        <input type="text" id="search-admins" class="form-control" placeholder="جستجوی مدیر...">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="admins-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>نام کاربری</th>
+                                    <th>نام کامل</th>
+                                    <th>مدرسه</th>
+                                    <th>وضعیت</th>
+                                    <th>آخرین فعالیت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admin in admins %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index }}</span>
+                                    </td>
+                                    <td>
+                                        <code>{{ admin.username }}</code>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ admin.name }}</div>
+                                        <small class="text-muted">{{ admin.email or 'ایمیل ثبت نشده' }}</small>
+                                    </td>
+                                    <td>
+                                        {% if admin.school %}
+                                            <span class="badge bg-primary">{{ admin.school.name }}</span>
+                                            <br>
+                                            <small class="text-muted">{{ admin.school.type_fa }}</small>
+                                        {% else %}
+                                            <span class="text-muted">بدون مدرسه</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if admin.is_active %}
+                                            <span class="badge bg-success">فعال</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {% if admin.last_login %}
+                                                {{ admin.last_login.strftime('%Y/%m/%d %H:%M') }}
+                                            {% else %}
+                                                هیچ فعالیتی ثبت نشده
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('super_admin.impersonate_admin', admin_id=admin.id) }}">
+                                            {{ form.hidden_tag() }}
+                                            <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-info" 
+                                                    data-confirm="آیا مطمئن هستید که می‌خواهید به عنوان '{{ admin.name }}' وارد شوید؟">
+                                                <i class="fas fa-user-secret me-1"></i>
+                                                ورود
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ مدیری یافت نشد
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Admin search functionality
+        const searchInput = document.getElementById('search-admins');
+        const table = document.getElementById('admins-table');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const username = row.cells[1].textContent.toLowerCase();
+                const name = row.cells[2].textContent.toLowerCase();
+                const school = row.cells[3].textContent.toLowerCase();
+                
+                if (username.includes(searchTerm) || name.includes(searchTerm) || school.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+        
+        // Form confirmation
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const confirmMessage = this.querySelector('button').getAttribute('data-confirm');
+                if (!confirm(confirmMessage)) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
