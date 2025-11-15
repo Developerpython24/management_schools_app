@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش نمره{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-edit me-2 text-warning"></i>
+                    ویرایش نمره
+                </h1>
+                <a href="{{ url_for('teacher.grades', class_id=class_id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    بازگشت به نمرات
+                </a>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('teacher.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('teacher.grades', class_id=class_id) }}">نمرات</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">ویرایش نمره</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star me-2"></i>
+                        ویرایش نمره دانش‌آموز: {{ grade.student.full_name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('teacher.edit_grade', grade_id=grade.id) }}" class="needs-validation" novalidate>
+                        <input type="hidden" name="class_id" value="{{ class_id }}">
+                        <input type="hidden" name="date" value="{{ grade.date.strftime('%Y-%m-%d') }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">دانش‌آموز <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" value="{{ grade.student.full_name }} ({{ grade.student.code }})" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">درس <span class="text-danger">*</span></label>
+                            <select name="subject_id" class="form-select" required>
+                                {% for subject in subjects %}
+                                    <option value="{{ subject.id }}" {% if subject.id == grade.subject_id %}selected{% endif %}>
+                                        {{ subject.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">درس الزامی است</div>
+                        </div>
+                        
+                        {% if school_type in ['middle', 'high'] %}
+                            <!-- برای متوسطه -->
+                            <div class="mb-3">
+                                <label class="form-label">نمره <span class="text-danger">*</span></label>
+                                <input type="number" name="score" class="form-control" step="0.1" min="0" max="20" 
+                                       value="{{ grade.score }}" required>
+                                <div class="invalid-feedback">نمره باید بین 0 تا 20 باشد</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">حداکثر نمره</label>
+                                <input type="number" name="max_score" class="form-control" step="0.1" min="1" max="100" 
+                                       value="{{ grade.max_score }}">
+                            </div>
+                        {% else %}
+                            <!-- برای ابتدایی -->
+                            <div class="mb-3">
+                                <label class="form-label">سطح <span class="text-danger">*</span></label>
+                                <select name="level" class="form-select" required>
+                                    <option value="excellent" {% if grade.level == 'excellent' %}selected{% endif %}>عالی</option>
+                                    <option value="very_good" {% if grade.level == 'very_good' %}selected{% endif %}>خیلی خوب</option>
+                                    <option value="good" {% if grade.level == 'good' %}selected{% endif %}>خوب</option>
+                                    <option value="needs_effort" {% if grade.level == 'needs_effort' %}selected{% endif %}>نیاز به تلاش</option>
+                                </select>
+                                <div class="invalid-feedback">سطح الزامی است</div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">توضیحات</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="توضیحات اختیاری...">{{ grade.description or '' }}</textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning px-4 py-2">
+                                <i class="fas fa-save me-1"></i>
+                                ذخیره تغییرات
+                            </button>
+                            <a href="{{ url_for('teacher.grades', class_id=class_id) }}" class="btn btn-outline-secondary px-4 py-2">
+                                <i class="fas fa-times me-1"></i>
+                                انصراف
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        آخرین ویرایش: {{ grade.updated_at.strftime('%Y/%m/%d %H:%M') }} توسط {{ grade.teacher.name }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (function() {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })();
+</script>
+{% endblock %}
