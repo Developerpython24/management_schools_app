@@ -1,0 +1,128 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button">
+            <i class="fas fa-bars text-primary"></i>
+        </button>
+        
+        <a class="navbar-brand d-none d-lg-block" href="{{ url_for('auth.index') }}">
+            <i class="fas fa-school me-2 text-primary"></i>
+            <strong class="text-primary">سیستم مدیریت مدرسه</strong>
+        </a>
+        
+        <div class="collapse navbar-collapse">
+            <div class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                    <!-- جستجو -->
+                    <form class="d-flex me-3" role="search">
+                        <input class="form-control form-control-sm" type="search" placeholder="جستجو..." aria-label="Search">
+                    </form>
+                    
+                    <!-- نوتیفیکیشن‌ها -->
+                    <div class="nav-item dropdown me-3">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell fa-lg"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                3
+                                <span class="visually-hidden">نوتیفیکیشن جدید</span>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end mt-2 p-0" aria-labelledby="notificationDropdown">
+                            <li class="px-3 py-2 border-bottom">
+                                <h6 class="mb-0">نوتیفیکیشن‌ها</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <i class="fas fa-user-graduate text-primary fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 fw-bold">دانش‌آموز جدید</p>
+                                            <small class="text-muted">5 دقیقه پیش</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <i class="fas fa-calendar-check text-success fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 fw-bold">حضور و غیاب ثبت شد</p>
+                                            <small class="text-muted">2 ساعت پیش</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <i class="fas fa-star text-warning fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 fw-bold">نمره ثبت شد</p>
+                                            <small class="text-muted">دیروز</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-center text-primary" href="#">
+                                    مشاهده همه نوتیفیکیشن‌ها
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- پروفایل کاربر -->
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <div class="me-2">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <span class="fw-bold">{{ current_user.name[0] if current_user.name else 'U' }}</span>
+                                </div>
+                            </div>
+                            <div class="d-none d-md-block">
+                                <div class="fw-bold">{{ current_user.name }}</div>
+                                <small class="text-muted">
+                                    {% if current_user.is_super_admin %}
+                                        Super Admin
+                                    {% elif current_user.is_school_admin %}
+                                        مدیر مدرسه
+                                    {% elif current_user.is_teacher %}
+                                        معلم
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('auth.settings') }}">
+                                    <i class="fas fa-cog me-2"></i>
+                                    تنظیمات حساب
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                    <i class="fas fa-user me-2"></i>
+                                    پروفایل من
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    خروج از سیستم
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
