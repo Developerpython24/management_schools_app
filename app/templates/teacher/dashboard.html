@@ -1,44 +1,338 @@
-{% extends "layout.html" %}
+{% extends "base.html" %}
+
 {% block title %}داشبورد معلم{% endblock %}
 
 {% block content %}
-<h2>داشبورد معلم - کلاس‌های شما</h2>
-
-<div class="row">
-    {% for class in classes %}
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <h4 class="card-title">{{ class.name }}</h4>
-                    <span class="badge bg-info">{{ class.grade }}</span>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>
+                داشبورد معلم - {{ current_user.name }}
+            </h1>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('teacher.dashboard') }}">خانه</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">داشبورد</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- کلاس‌های معلم -->
+    <div class="row">
+        {% for class_stat in class_stats %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chalkboard me-2"></i>
+                        {{ class_stat.class.name }} ({{ class_stat.class.grade }})
+                    </h5>
                 </div>
-                <p class="card-text mt-2">
-                    <i class="bi bi-people"></i> تعداد دانش‌آموز: <strong>{{ class.student_count }}</strong>
-                </p>
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('teacher.grades', class_id=class.id) }}" class="btn btn-primary">
-                        <i class="bi bi-pencil-square"></i> نمرات
-                    </a>
-                    <a href="{{ url_for('teacher.attendance', class_id=class.id) }}" class="btn btn-warning">
-                        <i class="bi bi-calendar-check"></i> حضور/غیاب
-                    </a>
-                    <a href="{{ url_for('teacher.discipline', class_id=class.id) }}" class="btn btn-danger">
-                        <i class="bi bi-exclamation-triangle"></i> انضباط
-                    </a>
-                    <a href="{{ url_for('teacher.skills', class_id=class.id) }}" class="btn btn-success">
-                        <i class="bi bi-star"></i> مهارت‌ها
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="text-muted small">تعداد دانش‌آموزان</div>
+                                <div class="display-6 fw-bold text-primary">{{ class_stat.student_count }}</div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="text-muted small">حاضری امروز</div>
+                                <div class="display-6 fw-bold text-success">{{ class_stat.today_attendance }}</div>
+                                <div class="text-muted small">
+                                    درصد حضور: {{ class_stat.attendance_percentage }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('teacher.attendance', class_id=class_stat.class.id) }}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-calendar-check me-1"></i>
+                                    حضور و غیاب
+                                </a>
+                                <a href="{{ url_for('teacher.grades', class_id=class_stat.class.id) }}" 
+                                   class="btn btn-outline-success">
+                                    <i class="fas fa-star me-1"></i>
+                                    نمرات
+                                </a>
+                                <a href="{{ url_for('teacher.discipline', class_id=class_stat.class.id) }}" 
+                                   class="btn btn-outline-warning">
+                                    <i class="fas fa-gavel me-1"></i>
+                                    نمرات انضباطی
+                                </a>
+                                <a href="{{ url_for('teacher.skills', class_id=class_stat.class.id) }}" 
+                                   class="btn btn-outline-info">
+                                    <i class="fas fa-medal me-1"></i>
+                                    ارزیابی مهارت‌ها
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            آخرین آپدیت: {{ class_stat.class.updated_at.strftime('%Y/%m/%d %H:%M') }}
+                        </small>
+                        <span class="badge bg-primary">کلاس فعال</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted mb-3">شما هیچ کلاسی ندارید</h4>
+                    <p class="text-muted mb-4">
+                        به نظر می‌رسد هیچ کلاسی به شما اختصاص داده نشده است.
+                        لطفاً با مدیر مدرسه تماس بگیرید.
+                    </p>
+                    <a href="{{ url_for('school_admin.dashboard') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        بازگشت به داشبورد
                     </a>
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% else %}
-    <div class="col-12">
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> شما به هیچ کلاسی اختصاص نیافته‌اید. با مدیر مدرسه تماس بگیرید.
+    
+    <!-- آخرین نمرات ثبت شده -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-star me-2 text-warning"></i>
+                        آخرین نمرات ثبت شده
+                    </span>
+                    <a href="{{ url_for('teacher.grades', class_id=class_stats[0].class.id if class_stats else '') }}" class="btn btn-sm btn-warning">
+                        <i class="fas fa-eye me-1"></i>
+                        مشاهده همه
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>دانش‌آموز</th>
+                                    <th>درس</th>
+                                    <th>نمره</th>
+                                    <th>تاریخ</th>
+                                    <th>کلاس</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade in recent_grades %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ grade.student.full_name }}</div>
+                                        <small class="text-muted">{{ grade.student.code }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ grade.subject.name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if current_user.school.type in ['middle', 'high'] %}
+                                            <span class="badge bg-primary">{{ grade.score }}/{{ grade.max_score }}</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ grade.level_fa }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ grade.date.strftime('%Y/%m/%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ grade.class_obj.name }}</small>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ نمره‌ای ثبت نشده است
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    {% endfor %}
+    
+    <!-- آخرین حضور و غیاب‌ها -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-calendar-check me-2 text-primary"></i>
+                        آخرین حضور و غیاب‌ها
+                    </span>
+                    <a href="{{ url_for('teacher.attendance', class_id=class_stats[0].class.id if class_stats else '') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye me-1"></i>
+                        مشاهده همه
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>دانش‌آموز</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ</th>
+                                    <th>کلاس</th>
+                                    <th>ثبت‌کننده</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in recent_attendance %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ attendance.student.full_name }}</div>
+                                        <small class="text-muted">{{ attendance.student.code }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge {{ attendance.status }}">
+                                            {{ attendance.status_fa }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ attendance.date.strftime('%Y/%m/%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ attendance.class_obj.name }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ attendance.teacher.name }}</small>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ حضور و غیابی ثبت نشده است
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- آمار نمرات -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line me-2 text-success"></i>
+                    آمار نمرات امروز
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="gradesChart" height="250"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-4">خلاصه نمرات</h5>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>معدل کل</span>
+                                    <span class="fw-bold text-primary">18.5</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 92.5%" aria-valuenow="92.5" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>نمرات بالای 18</span>
+                                    <span class="fw-bold text-success">12</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>نمرات زیر 10</span>
+                                    <span class="fw-bold text-danger">1</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 5%" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart.js for grades
+        const ctx = document.getElementById('gradesChart').getContext('2d');
+        
+        const gradesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['ریاضی', 'فیزیک', 'شیمی', 'ادبیات', 'زبان'],
+                datasets: [{
+                    label: 'معدل نمرات',
+                    data: [18.5, 17.8, 19.2, 16.5, 18.0],
+                    backgroundColor: '#06d6a0',
+                    borderColor: '#118ab2',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `معدل: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 10,
+                        max: 20,
+                        ticks: {
+                            stepSize: 2
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
