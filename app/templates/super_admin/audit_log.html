@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}گزارش فعالیت‌ها{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-history me-2 text-primary"></i>
+                    گزارش فعالیت‌ها
+                </h1>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary" id="refresh-log">
+                        <i class="fas fa-redo me-1"></i>
+                        تازه‌سازی
+                    </button>
+                    <button type="button" class="btn btn-success" id="export-log">
+                        <i class="fas fa-file-excel me-1"></i>
+                        خروجی اکسل
+                    </button>
+                </div>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">گزارش فعالیت‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- فیلترها و جستجو -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('super_admin.get_audit_log') }}" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">تاریخ شروع</label>
+                            <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">تاریخ پایان</label>
+                            <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">نوع فعالیت</label>
+                            <select name="action" class="form-select">
+                                <option value="">همه انواع</option>
+                                <option value="login" {% if action == 'login' %}selected{% endif %}>ورود</option>
+                                <option value="logout" {% if action == 'logout' %}selected{% endif %}>خروج</option>
+                                <option value="create_school" {% if action == 'create_school' %}selected{% endif %}>ایجاد مدرسه</option>
+                                <option value="edit_school" {% if action == 'edit_school' %}selected{% endif %}>ویرایش مدرسه</option>
+                                <option value="delete_school" {% if action == 'delete_school' %}selected{% endif %}>حذف مدرسه</option>
+                                <option value="create_admin" {% if action == 'create_admin' %}selected{% endif %}>ایجاد مدیر</option>
+                                <option value="edit_admin" {% if action == 'edit_admin' %}selected{% endif %}>ویرایش مدیر</option>
+                                <option value="delete_admin" {% if action == 'delete_admin' %}selected{% endif %}>حذف مدیر</option>
+                                <option value="impersonate" {% if action == 'impersonate' %}selected{% endif %}>ورود به عنوان</option>
+                                <option value="stop_impersonation" {% if action == 'stop_impersonation' %}selected{% endif %}>خروج از حالت ورود</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">کاربر</label>
+                            <input type="text" name="user" class="form-control" value="{{ user_filter }}" placeholder="نام کاربری...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-1"></i>
+                                فیلتر
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{{ url_for('super_admin.get_audit_log') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-1"></i>
+                                بازنشانی
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- لیست فعالیت‌ها -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2"></i>
+                    لیست فعالیت‌ها
+                    <span class="badge bg-primary rounded-pill ms-2">{{ pagination.total }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>زمان</th>
+                                    <th>کاربر</th>
+                                    <th>فعالیت</th>
+                                    <th>توضیحات</th>
+                                    <th>مدرسه</th>
+                                    <th>آی‌پی</th>
+                                    <th>مرورگر</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ log.timestamp.strftime('%Y/%m/%d %H:%M:%S') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">
+                                            {% if log.user %}
+                                                {{ log.user.name }}
+                                            {% else %}
+                                                <span class="text-muted">حذف شده</span>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">{{ log.user.username if log.user else 'نامشخص' }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if log.action in ['login', 'create_school', 'create_admin'] %}
+                                                bg-success
+                                            {% elif log.action in ['edit_school', 'edit_admin'] %}
+                                                bg-warning
+                                            {% elif log.action in ['delete_school', 'delete_admin', 'logout'] %}
+                                                bg-danger
+                                            {% else %}
+                                                bg-info
+                                            {% endif %}">
+                                            {{ log.action_fa }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ log.description | truncate(50) }}</small>
+                                    </td>
+                                    <td>
+                                        {% if log.school %}
+                                            <span class="badge bg-primary">{{ log.school.name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ log.ip_address | truncate(15) }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ log.user_agent | truncate(20) }}</small>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ فعالیتی یافت نشد
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    {% include 'partials/pagination.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- آمار و نمودارها -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    آمار فعالیت‌ها
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="activityChart" height="250"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-4">خلاصه فعالیت‌ها</h5>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>فعالیت‌های موفق</span>
+                                    <span class="fw-bold text-success">{{ success_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ (success_count / total_count * 100) | round(1) }}%" aria-valuenow="{{ (success_count / total_count * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>فعالیت‌های حساس</span>
+                                    <span class="fw-bold text-danger">{{ sensitive_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (sensitive_count / total_count * 100) | round(1) }}%" aria-valuenow="{{ (sensitive_count / total_count * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>کاربران فعال</span>
+                                    <span class="fw-bold text-primary">{{ active_users_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (active_users_count / total_users_count * 100) | round(1) }}%" aria-valuenow="{{ (active_users_count / total_users_count * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart.js for activity statistics
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        
+        const activityChart = new Chart(ctx, {
+            type: 'bar',
+             {
+                labels: ['ورود', 'ایجاد مدرسه', 'ایجاد مدیر', 'ویرایش', 'حذف', 'خروج'],
+                datasets: [{
+                    label: 'تعداد فعالیت‌ها',
+                     [{{ login_count }}, {{ create_school_count }}, {{ create_admin_count }}, {{ edit_count }}, {{ delete_count }}, {{ logout_count }}],
+                    backgroundColor: [
+                        '#06d6a0',
+                        '#118ab2',
+                        '#ef476f',
+                        '#ffd166',
+                        '#073b4c',
+                        '#7209b7'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `تعداد: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Refresh log
+        document.getElementById('refresh-log').addEventListener('click', function() {
+            location.reload();
+        });
+        
+        // Export log
+        document.getElementById('export-log').addEventListener('click', function() {
+            const params = new URLSearchParams(window.location.search);
+            window.location.href = '/super_admin/audit-log/export?' + params.toString();
+        });
+    });
+</script>
+{% endblock %}
