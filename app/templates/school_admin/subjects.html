@@ -1,75 +1,298 @@
-{% extends "layout.html" %}
-{% block title %}مدیریت دروس{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}درسهای مدرسه{% endblock %}
 
 {% block content %}
-<h2>مدیریت دروس</h2>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header bg-success text-white">
-                <i class="bi bi-plus-circle"></i> افزودن درس جدید
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-book me-2 text-primary"></i>
+                    مدیریت دروس
+                </h1>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    <i class="fas fa-plus me-1"></i>
+                    درس جدید
+                </button>
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    <div class="row">
-                        <div class="col-md-6 mb-2">
-                            <input type="text" name="name" class="form-control" 
-                                   placeholder="نام درس" required>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('school_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">درسهای مدرسه</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- فیلترها و جستجو -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('school_admin.subjects') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">جستجو</label>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="نام درس..." 
+                                   value="{{ search_query }}">
                         </div>
-                        <div class="col-md-4 mb-2">
-                            <select name="grade" class="form-select" required>
-                                <option value="">پایه</option>
+                        <div class="col-md-3">
+                            <label class="form-label">پایه</label>
+                            <select name="grade" class="form-select">
+                                <option value="">همه پایه‌ها</option>
                                 {% for grade in grades %}
-                                <option value="{{ grade }}">{{ grade }}</option>
+                                    <option value="{{ grade }}" {% if selected_grade == grade %}selected{% endif %}>{{ grade }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-2 mb-2">
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="bi bi-plus-lg"></i>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                جستجو
                             </button>
                         </div>
-                    </div>
-                </form>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{{ url_for('school_admin.subjects') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-1"></i>
+                                بازنشانی
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <i class="bi bi-book"></i> لیست دروس ({{ subjects|length }})
+    <!-- لیست دروس -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2"></i>
+                    لیست دروس
+                    <span class="badge bg-primary rounded-pill ms-2">{{ pagination.total }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>نام درس</th>
+                                    <th>پایه</th>
+                                    <th>معلم مسئول</th>
+                                    <th>تعداد کلاس‌ها</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subject in subjects %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ subject.name }}</div>
+                                        <small class="text-muted">
+                                            {% if subject.teacher %}
+                                                <i class="fas fa-chalkboard-teacher me-1"></i>{{ subject.teacher.name }}
+                                            {% else %}
+                                                <i class="fas fa-user me-1"></i>بدون معلم مسئول
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ subject.grade }}</span>
+                                    </td>
+                                    <td>
+                                        {% if subject.teacher %}
+                                            <a href="{{ url_for('school_admin.edit_teacher', teacher_id=subject.teacher_id) }}" class="text-decoration-none">
+                                                {{ subject.teacher.name }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">تعیین نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ subject.classes_count }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('school_admin.edit_subject', subject_id=subject.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('school_admin.delete_subject', subject_id=subject.id) }}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="حذف"
+                                               data-confirm="آیا مطمئن هستید که می‌خواهید درس '{{ subject.name }}' را حذف کنید؟">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ درسی یافت نشد
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    {% include 'partials/pagination.html' %}
+                </div>
             </div>
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>درس</th>
-                            <th>پایه</th>
-                            <th>عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for subject in subjects %}
-                        <tr>
-                            <td><strong>{{ subject.name }}</strong></td>
-                            <td>{{ subject.grade }}</td>
-                            <td>
-                                <span class="text-muted small">غیرقابل ویرایش</span>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="3" class="text-center text-muted py-4">
-                                درسی یافت نشد
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        </div>
+    </div>
+    
+    <!-- نمودار آماری -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-chart-pie me-2"></i>
+                        آمار دروس بر اساس پایه
+                    </span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chartTypeDropdown" data-bs-toggle="dropdown">
+                            نوع نمودار
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="chartTypeDropdown">
+                            <li><a class="dropdown-item" href="#" data-chart-type="bar">ستونی</a></li>
+                            <li><a class="dropdown-item" href="#" data-chart-type="pie">دایره‌ای</a></li>
+                            <li><a class="dropdown-item" href="#" data-chart-type="line">خطی</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="subjectsChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- مودال ایجاد درس جدید -->
+<div class="modal fade" id="addSubjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-book me-2"></i>
+                    ایجاد درس جدید
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('school_admin.subjects') }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">نام درس <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required>
+                        <div class="invalid-feedback">نام درس الزامی است</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">پایه <span class="text-danger">*</span></label>
+                        <select name="grade" class="form-select" required>
+                            <option value="">انتخاب پایه</option>
+                            {% for grade in grades %}
+                                <option value="{{ grade }}">{{ grade }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">پایه الزامی است</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">معلم مسئول</label>
+                        <select name="teacher_id" class="form-select">
+                            <option value="">انتخاب معلم</option>
+                            {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        ایجاد درس
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart.js for subjects by grade
+        const ctx = document.getElementById('subjectsChart').getContext('2d');
+        
+        const subjectsChart = new Chart(ctx, {
+            type: 'bar',
+             {
+                labels: [{% for grade in grades %}'{{ grade }}',{% endfor %}],
+                datasets: [{
+                    label: 'تعداد دروس',
+                    data: [{% for grade in grades %}{{ grade_counts.get(grade, 0) }},{% endfor %}],
+                    backgroundColor: '#06d6a0',
+                    borderColor: '#118ab2',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `تعداد دروس: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Change chart type
+        document.querySelectorAll('[data-chart-type]').forEach(button => {
+            button.addEventListener('click', function() {
+                const chartType = this.getAttribute('data-chart-type');
+                subjectsChart.config.type = chartType;
+                subjectsChart.update();
+            });
+        });
+    });
+</script>
 {% endblock %}
