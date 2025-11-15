@@ -1,128 +1,367 @@
-{% extends "layout.html" %}
-{% block title %}ثبت نمرات - کلاس {{ class_info.name }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}نمرات کلاس{% endblock %}
 
 {% block content %}
-<h2>ثبت نمرات - کلاس {{ class_info.name }} (پایه {{ class_info.grade }})</h2>
-
-<div class="card mb-3">
-    <div class="card-header bg-light">
-        <form method="GET" class="row">
-            <div class="col-md-4">
-                <label class="form-label">تاریخ</label>
-                <input type="date" name="date" class="form-control" 
-                       value="{{ selected_date }}" onchange="this.form.submit()">
-            </div>
-            <div class="col-md-8 align-self-end">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> برای مدیریت حافظه، فقط اطلاعات روز قابل ویرایش است
-                </small>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <i class="bi bi-plus-circle"></i> ثبت نمره جدید
-    </div>
-    <div class="card-body">
-        <form method="POST">
-            <div class="row">
-                <div class="col-md-3 mb-2">
-                    <label class="form-label">دانش‌آموز</label>
-                    <select name="student_id" class="form-select" required>
-                        <option value="">انتخاب کنید</option>
-                        {% for student in students %}
-                        <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label">درس</label>
-                    <select name="subject_id" class="form-select" required>
-                        {% for subject in subjects %}
-                        <option value="{{ subject.id }}">{{ subject.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% if school_type in ['middle', 'high'] %}
-                <div class="col-md-2 mb-2">
-                    <label class="form-label">نمره</label>
-                    <input type="number" name="score" class="form-control" 
-                           placeholder="0-20" step="0.25" max="20" required>
-                </div>
-                <div class="col-md-2 mb-2">
-                    <label class="form-label">حداکثر</label>
-                    <input type="number" name="max_score" class="form-control" 
-                           value="20" required>
-                </div>
-                {% else %}
-                <div class="col-md-4 mb-2">
-                    <label class="form-label">سطح توصیفی</label>
-                    <select name="level" class="form-select" required>
-                        <option value="excellent">عالی</option>
-                        <option value="very_good">خیلی خوب</option>
-                        <option value="good">خوب</option>
-                        <option value="needs_effort">نیاز به تلاش</option>
-                    </select>
-                </div>
-                {% endif %}
-                <div class="col-md-2 mb-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="bi bi-save"></i> ثبت
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-star me-2 text-warning"></i>
+                    نمرات کلاس {{ class_info.name }} ({{ class_info.grade }})
+                </h1>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('teacher.export_grades', class_id=class_id, start_date=selected_date, end_date=selected_date) }}" 
+                       class="btn btn-success" 
+                       title="خروجی اکسل">
+                        <i class="fas fa-file-excel me-1"></i>
+                        خروجی اکسل
+                    </a>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGradeModal">
+                        <i class="fas fa-plus me-1"></i>
+                        نمره جدید
                     </button>
                 </div>
             </div>
-        </form>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('teacher.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">نمرات</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-</div>
-
-<div class="card">
-    <div class="card-header bg-secondary text-white">
-        <i class="bi bi-list"></i> نمرات ثبت‌شده در تاریخ {{ selected_date }}
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>دانش‌آموز</th>
-                        <th>درس</th>
-                        <th>نمره/سطح</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for grade in grades %}
-                    <tr>
-                        <td><strong>{{ grade.first_name }} {{ grade.last_name }}</strong></td>
-                        <td>{{ grade.subject_name }}</td>
-                        <td>
-                            {% if grade.score %}
-                                <span class="badge bg-primary">{{ grade.score }}/{{ grade.max_score }}</span>
-                            {% else %}
-                                <span class="badge bg-info">
-                                    {{ {'excellent':'عالی','very_good':'خیلی خوب','good':'خوب','needs_effort':'نیاز به تلاش'}[grade.level] }}
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger disabled">
-                                <i class="bi bi-trash"></i> حذف
+    
+    <!-- فیلتر تاریخ -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('teacher.grades', class_id=class_id) }}" class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">تاریخ</label>
+                            <input type="date" name="date" class="form-control" 
+                                   value="{{ selected_date }}" max="{{ today.isoformat() }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-1"></i>
+                                فیلتر
                             </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted py-4">
-                            <i class="bi bi-inbox fs-1"></i><br>
-                            نمره‌ای برای این تاریخ ثبت نشده است
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{{ url_for('teacher.grades', class_id=class_id) }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-1"></i>
+                                بازنشانی
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-md-end">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('teacher.grades', class_id=class_id, date=(selected_date | add_days(-1)).isoformat()) }}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary">
+                                    {{ selected_date | format_persian_date }}
+                                </button>
+                                <a href="{{ url_for('teacher.grades', class_id=class_id, date=(selected_date | add_days(1)).isoformat()) }}" 
+                                   class="btn btn-outline-secondary {% if selected_date >= today %}disabled{% endif %}">
+                                    <i class="fas fa-arrow-left"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- خلاصه نمرات -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    خلاصه نمرات
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if school_type in ['middle', 'high'] %}
+                            <!-- برای متوسطه -->
+                            {% for subject in grades_summary %}
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-primary shadow-sm">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                    {{ subject.name }}
+                                                </div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    {{ "%.1f" | format(subject.avg_score) }} / 20
+                                                </div>
+                                                <small class="text-muted">
+                                                    {{ subject.count }} نمره ثبت شده
+                                                </small>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-star fa-2x text-primary"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- برای ابتدایی -->
+                            <div class="col-12">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>درس</th>
+                                                <th>عالی</th>
+                                                <th>خیلی خوب</th>
+                                                <th>خوب</th>
+                                                <th>نیاز به تلاش</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for subject_name, levels in grades_summary.items() %}
+                                            <tr>
+                                                <td class="fw-bold">{{ subject_name }}</td>
+                                                {% for level in ['excellent', 'very_good', 'good', 'needs_effort'] %}
+                                                <td>
+                                                    {% set count = levels.get(level, 0) %}
+                                                    {% if count > 0 %}
+                                                        <span class="badge bg-{{ 'success' if level == 'excellent' else 'info' if level == 'very_good' else 'warning' if level == 'good' else 'danger' }}">
+                                                            {{ count }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-muted">0</span>
+                                                    {% endif %}
+                                                </td>
+                                                {% endfor %}
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- لیست نمرات -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-list me-2"></i>
+                        لیست نمرات
+                    </span>
+                    <span class="badge bg-primary rounded-pill">{{ grades | length }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>دانش‌آموز</th>
+                                    <th>درس</th>
+                                    <th>نمره</th>
+                                    <th>توضیحات</th>
+                                    <th>تاریخ</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade in grades %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ grade.student.full_name }}</div>
+                                        <small class="text-muted">{{ grade.student.code }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ grade.subject.name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if school_type in ['middle', 'high'] %}
+                                            <span class="badge bg-primary">{{ grade.score }}/{{ grade.max_score }}</span>
+                                            <div class="text-muted small mt-1">
+                                                {{ "%.1f" | format((grade.score / grade.max_score * 100)) }}%
+                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-{{ 'success' if grade.level == 'excellent' else 'info' if grade.level == 'very_good' else 'warning' if grade.level == 'good' else 'danger' }}">
+                                                {{ grade.level_fa }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if grade.description %}
+                                            <small>{{ grade.description[:50] }}{% if grade.description|length > 50 %}...{% endif %}</small>
+                                        {% else %}
+                                            <span class="text-muted">توضیحی ثبت نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ grade.date.strftime('%Y/%m/%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('teacher.edit_grade', grade_id=grade.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="#" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="حذف"
+                                               data-confirm="آیا مطمئن هستید که می‌خواهید این نمره را حذف کنید؟">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ نمره‌ای برای این تاریخ ثبت نشده است
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- مودال ثبت نمره جدید -->
+<div class="modal fade" id="addGradeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-star me-2"></i>
+                    ثبت نمره جدید
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('teacher.grades', class_id=class_id) }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <input type="hidden" name="date" value="{{ selected_date }}">
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">دانش‌آموز <span class="text-danger">*</span></label>
+                            <select name="student_id" class="form-select" required>
+                                <option value="">انتخاب دانش‌آموز</option>
+                                {% for student in students %}
+                                    <option value="{{ student.id }}">{{ student.full_name }} ({{ student.code }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">دانش‌آموز الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">درس <span class="text-danger">*</span></label>
+                            <select name="subject_id" class="form-select" required>
+                                <option value="">انتخاب درس</option>
+                                {% for subject in subjects %}
+                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">درس الزامی است</div>
+                        </div>
+                        
+                        {% if school_type in ['middle', 'high'] %}
+                            <!-- برای متوسطه -->
+                            <div class="col-md-6">
+                                <label class="form-label">نمره <span class="text-danger">*</span></label>
+                                <input type="number" name="score" class="form-control" step="0.1" min="0" max="20" required>
+                                <div class="invalid-feedback">نمره باید بین 0 تا 20 باشد</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">حداکثر نمره</label>
+                                <input type="number" name="max_score" class="form-control" value="20" step="0.1" min="1" max="100">
+                            </div>
+                        {% else %}
+                            <!-- برای ابتدایی -->
+                            <div class="col-12">
+                                <label class="form-label">سطح <span class="text-danger">*</span></label>
+                                <select name="level" class="form-select" required>
+                                    <option value="">انتخاب سطح</option>
+                                    <option value="excellent">عالی</option>
+                                    <option value="very_good">خیلی خوب</option>
+                                    <option value="good">خوب</option>
+                                    <option value="needs_effort">نیاز به تلاش</option>
+                                </select>
+                                <div class="invalid-feedback">سطح الزامی است</div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="col-12">
+                            <label class="form-label">توضیحات</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="توضیحات اختیاری..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i>
+                        ثبت نمره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Form validation
+        (function() {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })();
+    });
+</script>
 {% endblock %}
