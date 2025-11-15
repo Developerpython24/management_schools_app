@@ -1,0 +1,124 @@
+<div class="sidebar {% if session.get('sidebar_collapsed') %}collapsed{% endif %}">
+    <div class="sidebar-header">
+        <div class="logo">
+            <i class="fas fa-school"></i>
+        </div>
+        <h4 class="mb-0">سیستم مدرسه</h4>
+    </div>
+    
+    <div class="sidebar-menu">
+        {% if current_user.is_authenticated %}
+            {% if current_user.is_super_admin %}
+                <!-- Super Admin Menu -->
+                <a href="{{ url_for('super_admin.dashboard') }}" class="{% if request.path.startswith('/super_admin/dashboard') %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>داشبورد</span>
+                </a>
+                <a href="{{ url_for('super_admin.schools') }}" class="{% if request.path.startswith('/super_admin/schools') %}active{% endif %}">
+                    <i class="fas fa-building"></i>
+                    <span>مدیریت مدارس</span>
+                </a>
+                <a href="{{ url_for('super_admin.admins') }}" class="{% if request.path.startswith('/super_admin/admins') %}active{% endif %}">
+                    <i class="fas fa-user-tie"></i>
+                    <span>مدیران مدرسه</span>
+                </a>
+                <a href="{{ url_for('super_admin.impersonate') }}" class="{% if request.path.startswith('/super_admin/impersonate') %}active{% endif %}">
+                    <i class="fas fa-user-secret"></i>
+                    <span>ورود به عنوان مدیر</span>
+                </a>
+                <a href="{{ url_for('super_admin.get_audit_log') }}" class="{% if request.path.startswith('/super_admin/audit-log') %}active{% endif %}">
+                    <i class="fas fa-history"></i>
+                    <span>گزارش فعالیت‌ها</span>
+                </a>
+            {% elif current_user.is_school_admin %}
+                <!-- School Admin Menu -->
+                <a href="{{ url_for('school_admin.dashboard') }}" class="{% if request.path.startswith('/school_admin/dashboard') %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>داشبورد</span>
+                </a>
+                <a href="{{ url_for('school_admin.students') }}" class="{% if request.path.startswith('/school_admin/students') %}active{% endif %}">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>دانش‌آموزان</span>
+                </a>
+                <a href="{{ url_for('school_admin.teachers') }}" class="{% if request.path.startswith('/school_admin/teachers') %}active{% endif %}">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>معلمان</span>
+                </a>
+                <a href="{{ url_for('school_admin.classes') }}" class="{% if request.path.startswith('/school_admin/classes') %}active{% endif %}">
+                    <i class="fas fa-chalkboard"></i>
+                    <span>کلاس‌ها</span>
+                </a>
+                <a href="{{ url_for('school_admin.attendance') }}" class="{% if request.path.startswith('/school_admin/attendance') %}active{% endif %}">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>حضور و غیاب</span>
+                </a>
+                <a href="{{ url_for('school_admin.discipline') }}" class="{% if request.path.startswith('/school_admin/discipline') %}active{% endif %}">
+                    <i class="fas fa-gavel"></i>
+                    <span>انضباط</span>
+                </a>
+                <a href="{{ url_for('school_admin.reports') }}" class="{% if request.path.startswith('/school_admin/reports') %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>گزارش‌ها</span>
+                </a>
+            {% elif current_user.is_teacher %}
+                <!-- Teacher Menu -->
+                <a href="{{ url_for('teacher.dashboard') }}" class="{% if request.path.startswith('/teacher/dashboard') %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>داشبورد</span>
+                </a>
+                <a href="{{ url_for('teacher.attendance') }}" class="{% if request.path.startswith('/teacher/attendance') %}active{% endif %}">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>حضور و غیاب</span>
+                </a>
+                <a href="{{ url_for('teacher.grades') }}" class="{% if request.path.startswith('/teacher/grades') %}active{% endif %}">
+                    <i class="fas fa-star"></i>
+                    <span>نمرات</span>
+                </a>
+                <a href="{{ url_for('teacher.discipline') }}" class="{% if request.path.startswith('/teacher/discipline') %}active{% endif %}">
+                    <i class="fas fa-gavel"></i>
+                    <span>نمرات انضباطی</span>
+                </a>
+                <a href="{{ url_for('teacher.skills') }}" class="{% if request.path.startswith('/teacher/skills') %}active{% endif %}">
+                    <i class="fas fa-medal"></i>
+                    <span>ارزیابی مهارت‌ها</span>
+                </a>
+            {% endif %}
+        {% else %}
+            <!-- Public Menu -->
+            <a href="{{ url_for('auth.login') }}" class="{% if request.path == '/login' %}active{% endif %}">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>ورود به سیستم</span>
+            </a>
+            <a href="{{ url_for('auth.password_reset_request') }}" class="{% if request.path == '/password-reset' %}active{% endif %}">
+                <i class="fas fa-key"></i>
+                <span>بازیابی رمز عبور</span>
+            </a>
+        {% endif %}
+    </div>
+    
+    <div class="sidebar-footer">
+        <div class="d-flex align-items-center">
+            <div class="me-2">
+                <i class="fas fa-circle text-success"></i>
+            </div>
+            <div class="flex-grow-1">
+                <small class="d-block">{{ current_user.name if current_user.is_authenticated else 'مهمان' }}</small>
+                <small class="text-muted">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_super_admin %}
+                            Super Admin
+                        {% elif current_user.is_school_admin %}
+                            مدیر مدرسه
+                        {% elif current_user.is_teacher %}
+                            معلم
+                        {% else %}
+                            کاربر
+                        {% endif %}
+                    {% else %}
+                        مهمان
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
