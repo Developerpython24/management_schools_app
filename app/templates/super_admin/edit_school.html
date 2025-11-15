@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش مدرسه{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-edit me-2 text-warning"></i>
+                    ویرایش مدرسه: {{ school.name }}
+                </h1>
+                <a href="{{ url_for('super_admin.schools') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    بازگشت به لیست
+                </a>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.schools') }}">مدیریت مدارس</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">ویرایش مدرسه</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <i class="fas fa-school me-2"></i>
+                    فرم ویرایش مدرسه
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('super_admin.edit_school', school_id=school.id) }}" class="needs-validation" novalidate>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">نام مدرسه <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" value="{{ school.name }}" required>
+                                <div class="invalid-feedback">نام مدرسه الزامی است</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">نوع مدرسه <span class="text-danger">*</span></label>
+                                <select name="school_type" class="form-select" required>
+                                    <option value="elementary" {% if school.type == 'elementary' %}selected{% endif %}>ابتدایی</option>
+                                    <option value="middle" {% if school.type == 'middle' %}selected{% endif %}>متوسطه اول</option>
+                                    <option value="high" {% if school.type == 'high' %}selected{% endif %}>متوسطه دوم</option>
+                                    <option value="combined" {% if school.type == 'combined' %}selected{% endif %}>یکپارچه</option>
+                                </select>
+                                <div class="invalid-feedback">نوع مدرسه الزامی است</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">آدرس</label>
+                                <textarea name="address" class="form-control" rows="3">{{ school.address or '' }}</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">شماره تماس</label>
+                                <input type="text" name="phone" class="form-control" value="{{ school.phone or '' }}" placeholder="021-12345678">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ایمیل</label>
+                                <input type="email" name="email" class="form-control" value="{{ school.email or '' }}" placeholder="school@example.com">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-warning px-4 py-2">
+                                    <i class="fas fa-save me-1"></i>
+                                    ذخیره تغییرات
+                                </button>
+                                <a href="{{ url_for('super_admin.schools') }}" class="btn btn-secondary px-4 py-2">
+                                    <i class="fas fa-times me-1"></i>
+                                    انصراف
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
