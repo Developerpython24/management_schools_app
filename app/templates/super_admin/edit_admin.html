@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش مدیر{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-edit me-2 text-warning"></i>
+                    ویرایش مدیر: {{ admin.name }}
+                </h1>
+                <a href="{{ url_for('super_admin.admins') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    بازگشت به لیست
+                </a>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.admins') }}">مدیران مدرسه</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">ویرایش مدیر</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <i class="fas fa-user-tie me-2"></i>
+                    فرم ویرایش مدیر
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('super_admin.edit_admin', admin_id=admin.id) }}" class="needs-validation" novalidate>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">نام کاربری <span class="text-danger">*</span></label>
+                                <input type="text" name="username" class="form-control" value="{{ admin.username }}" required readonly>
+                                <div class="invalid-feedback">نام کاربری قابل تغییر نیست</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">نام کامل <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" value="{{ admin.name }}" required>
+                                <div class="invalid-feedback">نام کامل الزامی است</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">مدرسه <span class="text-danger">*</span></label>
+                                <select name="school_id" class="form-select" required>
+                                    <option value="">انتخاب مدرسه</option>
+                                    {% for school in schools %}
+                                        <option value="{{ school.id }}" {% if school.id == admin.school_id %}selected{% endif %}>
+                                            {{ school.name }} ({{ school.type_fa }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">مدرسه الزامی است</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">شماره تماس</label>
+                                <input type="text" name="phone" class="form-control" value="{{ admin.phone or '' }}" placeholder="09123456789">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">ایمیل</label>
+                                <input type="email" name="email" class="form-control" value="{{ admin.email or '' }}" placeholder="admin@example.com">
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {% if admin.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        حساب فعال باشد
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <h5 class="mb-3 mt-4">تغییر رمز عبور</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">رمز عبور جدید</label>
+                                        <div class="input-group">
+                                            <input type="password" name="new_password" class="form-control" placeholder="ترک خالی برای عدم تغییر">
+                                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="input[name='new_password']">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">حداقل 8 کاراکتر</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">تایید رمز عبور جدید</label>
+                                        <div class="input-group">
+                                            <input type="password" name="confirm_password" class="form-control" placeholder="تکرار رمز عبور">
+                                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="input[name='confirm_password']">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-warning px-4 py-2">
+                                    <i class="fas fa-save me-1"></i>
+                                    ذخیره تغییرات
+                                </button>
+                                <a href="{{ url_for('super_admin.admins') }}" class="btn btn-secondary px-4 py-2">
+                                    <i class="fas fa-times me-1"></i>
+                                    انصراف
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.toggle-password').forEach(element => {
+        element.addEventListener('click', function() {
+            const targetSelector = this.getAttribute('data-target');
+            const input = document.querySelector(targetSelector);
+            const icon = this.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+</script>
+{% endblock %}
