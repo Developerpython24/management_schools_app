@@ -1,49 +1,325 @@
-{% extends "layout.html" %}
-{% block title %}تخصیص دانش‌آموزان به کلاس {{ class_info.name }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}تخصیص دانش‌آموزان به کلاس{% endblock %}
 
 {% block content %}
-<h2>تخصیص دانش‌آموزان به کلاس</h2>
-
-<div class="card mb-4">
-    <div class="card-header bg-info text-white">
-        <i class="bi bi-info-circle"></i> اطلاعات کلاس
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-user-plus me-2 text-info"></i>
+                    تخصیص دانش‌آموزان به کلاس
+                </h1>
+                <a href="{{ url_for('school_admin.classes') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    بازگشت به لیست کلاس‌ها
+                </a>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('school_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('school_admin.classes') }}">کلاس‌ها</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">تخصیص دانش‌آموزان</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-    <div class="card-body">
-        <h4>کلاس: <strong>{{ class_info.name }}</strong></h4>
-        <p class="mb-0">پایه: <strong>{{ class_info.grade }}</strong></p>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <i class="bi bi-people"></i> انتخاب دانش‌آموزان (پایه {{ class_info.grade }})
-    </div>
-    <div class="card-body">
-        <form method="POST">
-            <div class="row">
-                {% for student in students %}
-                <div class="col-md-4 mb-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" 
-                               name="students" value="{{ student.id }}" 
-                               id="student_{{ student.id }}"
-                               {{ 'checked' if student.id in assigned }}>
-                        <label class="form-check-label" for="student_{{ student.id }}">
-                            <strong>{{ student.first_name }} {{ student.last_name }}</strong>
-                            <small class="text-muted">(کد: {{ student.code }})</small>
-                        </label>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chalkboard me-2"></i>
+                        کلاس: {{ class_info.name }} ({{ class_info.grade }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">
+                                <i class="fas fa-user-friends me-2 text-primary"></i>
+                                دانش‌آموزان فعلی کلاس ({{ assigned_count }})
+                            </h5>
+                            <div class="list-group assigned-students">
+                                {% for student_id in assigned %}
+                                    {% set student = students_dict.get(student_id) %}
+                                    {% if student %}
+                                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center assigned-item" data-student-id="{{ student.id }}">
+                                            <div>
+                                                <div class="fw-bold">{{ student.full_name }}</div>
+                                                <small class="text-muted">{{ student.code }}</small>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-student" data-student-id="{{ student.id }}">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="list-group-item text-center py-3">
+                                        <small class="text-muted">هیچ دانش‌آموزی در این کلاس وجود ندارد</small>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">
+                                <i class="fas fa-user-plus me-2 text-success"></i>
+                                دانش‌آموزان قابل تخصیص ({{ available_count }})
+                            </h5>
+                            <div class="mb-3">
+                                <input type="text" id="search-students" class="form-control" placeholder="جستجوی دانش‌آموز...">
+                            </div>
+                            <div class="list-group available-students">
+                                {% for student in students %}
+                                    {% if student.id not in assigned %}
+                                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center available-item" data-student-id="{{ student.id }}">
+                                            <div>
+                                                <div class="fw-bold">{{ student.full_name }}</div>
+                                                <small class="text-muted">{{ student.code }} - {{ student.grade }}</small>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary add-student" data-student-id="{{ student.id }}">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="list-group-item text-center py-3">
+                                        <small class="text-muted">دانش‌آموزی برای تخصیص وجود ندارد</small>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {% endfor %}
+                <div class="card-footer bg-light text-end">
+                    <button type="button" id="save-assignment" class="btn btn-primary px-4 py-2">
+                        <i class="fas fa-save me-1"></i>
+                        ذخیره تغییرات
+                    </button>
+                </div>
             </div>
-            <hr>
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-save"></i> ذخیره تخصیص
-            </button>
-            <a href="{{ url_for('school_admin.classes') }}" class="btn btn-secondary">
-                بازگشت
-            </a>
-        </form>
+        </div>
+    </div>
+    
+    <!-- آمار و نمودارها -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    آمار دانش‌آموزان کلاس
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="studentsChart" height="250"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-4">خلاصه دانش‌آموزان</h5>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>ظرفیت کلاس</span>
+                                    <span class="fw-bold text-primary">{{ class_capacity }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (assigned_count / class_capacity * 100) | round(1) }}%" aria-valuenow="{{ (assigned_count / class_capacity * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>دانش‌آموزان متخصص</span>
+                                    <span class="fw-bold text-success">{{ specialized_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ (specialized_count / assigned_count * 100) | round(1) }}%" aria-valuenow="{{ (specialized_count / assigned_count * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>دانش‌آموزان جدید</span>
+                                    <span class="fw-bold text-info">{{ new_students_count }}</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ (new_students_count / assigned_count * 100) | round(1) }}%" aria-valuenow="{{ (new_students_count / assigned_count * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<form id="assignment-form" method="POST" action="{{ url_for('school_admin.assign_students', class_id=class_info.id) }}">
+    <input type="hidden" name="assigned_students" id="assigned-students-input" value="">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart.js for student statistics
+        const ctx = document.getElementById('studentsChart').getContext('2d');
+        
+        const studentsChart = new Chart(ctx, {
+            type: 'pie',
+             {
+                labels: ['دانش‌آموزان کلاس', 'دانش‌آموزان موجود', 'دانش‌آموزان قابل تخصیص'],
+                datasets: [{
+                    data: [{{ assigned_count }}, {{ students|length }}, {{ available_count }}],
+                    backgroundColor: [
+                        '#4361ee',
+                        '#4cc9f0',
+                        '#4895ef'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((context.parsed / total) * 100);
+                                return `${context.label}: ${context.parsed} نفر (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Student assignment functionality
+        const assignedStudents = new Set({% for student_id in assigned %}{{ student_id }},{% endfor %});
+        const assignedItems = document.querySelectorAll('.assigned-item');
+        const availableItems = document.querySelectorAll('.available-item');
+        
+        // Add student to class
+        document.querySelectorAll('.add-student').forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = parseInt(this.getAttribute('data-student-id'));
+                if (!assignedStudents.has(studentId)) {
+                    assignedStudents.add(studentId);
+                    updateUI();
+                }
+            });
+        });
+        
+        // Remove student from class
+        document.querySelectorAll('.remove-student').forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = parseInt(this.getAttribute('data-student-id'));
+                assignedStudents.delete(studentId);
+                updateUI();
+            });
+        });
+        
+        // Search functionality
+        document.getElementById('search-students').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            document.querySelectorAll('.available-item').forEach(item => {
+                const name = item.querySelector('.fw-bold').textContent.toLowerCase();
+                const code = item.querySelector('.text-muted').textContent.toLowerCase();
+                if (name.includes(searchTerm) || code.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Save assignment
+        document.getElementById('save-assignment').addEventListener('click', function() {
+            const assignedArray = Array.from(assignedStudents);
+            document.getElementById('assigned-students-input').value = JSON.stringify(assignedArray);
+            document.getElementById('assignment-form').submit();
+        });
+        
+        // Update UI after changes
+        function updateUI() {
+            // Update assigned students list
+            const assignedList = document.querySelector('.assigned-students');
+            assignedList.innerHTML = '';
+            
+            if (assignedStudents.size === 0) {
+                assignedList.innerHTML = '<div class="list-group-item text-center py-3"><small class="text-muted">هیچ دانش‌آموزی در این کلاس وجود ندارد</small></div>';
+                return;
+            }
+            
+            assignedArray = Array.from(assignedStudents);
+            assignedArray.sort((a, b) => {
+                const studentA = document.querySelector(`.available-item[data-student-id="${a}"]`) || 
+                                 document.querySelector(`.assigned-item[data-student-id="${a}"]`);
+                const studentB = document.querySelector(`.available-item[data-student-id="${b}"]`) || 
+                                 document.querySelector(`.assigned-item[data-student-id="${b}"]`);
+                return studentA.querySelector('.fw-bold').textContent.localeCompare(studentB.querySelector('.fw-bold').textContent);
+            });
+            
+            assignedArray.forEach(studentId => {
+                const studentElement = document.querySelector(`.available-item[data-student-id="${studentId}"]`) || 
+                                     document.querySelector(`.assigned-item[data-student-id="${studentId}"]`);
+                
+                if (studentElement) {
+                    const studentName = studentElement.querySelector('.fw-bold').textContent;
+                    const studentCode = studentElement.querySelector('.text-muted').textContent;
+                    
+                    const newItem = document.createElement('div');
+                    newItem.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center assigned-item';
+                    newItem.setAttribute('data-student-id', studentId);
+                    newItem.innerHTML = `
+                        <div>
+                            <div class="fw-bold">${studentName}</div>
+                            <small class="text-muted">${studentCode}</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-student" data-student-id="${studentId}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    
+                    assignedList.appendChild(newItem);
+                }
+            });
+            
+            // Update available students list
+            document.querySelectorAll('.available-item').forEach(item => {
+                const studentId = parseInt(item.getAttribute('data-student-id'));
+                if (assignedStudents.has(studentId)) {
+                    item.style.display = 'none';
+                } else {
+                    item.style.display = '';
+                }
+            });
+            
+            // Update remove buttons
+            document.querySelectorAll('.remove-student').forEach(button => {
+                button.removeEventListener('click', handleRemoveStudent);
+                button.addEventListener('click', handleRemoveStudent);
+            });
+        }
+        
+        function handleRemoveStudent() {
+            const studentId = parseInt(this.getAttribute('data-student-id'));
+            assignedStudents.delete(studentId);
+            updateUI();
+        }
+        
+        // Initialize event listeners
+        document.querySelectorAll('.remove-student').forEach(button => {
+            button.addEventListener('click', handleRemoveStudent);
+        });
+    });
+</script>
 {% endblock %}
