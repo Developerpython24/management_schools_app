@@ -1,84 +1,221 @@
-{% extends "layout.html" %}
+{% extends "base.html" %}
+
 {% block title %}مدیریت مدارس{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>مدیریت مدارس</h2>
-</div>
-
-<div class="card mb-4">
-    <div class="card-header bg-primary text-white">
-        <i class="bi bi-plus-circle"></i> افزودن مدرسه جدید
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-building me-2 text-primary"></i>
+                    مدیریت مدارس
+                </h1>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSchoolModal">
+                    <i class="fas fa-plus me-1"></i>
+                    ایجاد مدرسه جدید
+                </button>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">مدیریت مدارس</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="POST">
-            <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">نام مدرسه</label>
-                    <input type="text" name="name" class="form-control" 
-                           placeholder="مثال: مدرسه ابتدایی شهید بهشتی" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">نوع مدرسه</label>
-                    <select name="type" class="form-select" required>
-                        <option value="">انتخاب کنید</option>
-                        <option value="elementary">ابتدایی (توصیفی)</option>
-                        <option value="middle">متوسطه اول (نمره‌ای)</option>
-                        <option value="high">متوسطه دوم (نمره‌ای)</option>
-                    </select>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="bi bi-save"></i> ایجاد
-                    </button>
+    
+    <!-- فیلترها و جستجو -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('super_admin.schools') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">جستجو</label>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="نام مدرسه..." 
+                                   value="{{ search_query }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">نوع مدرسه</label>
+                            <select name="type" class="form-select">
+                                <option value="">همه انواع</option>
+                                <option value="elementary" {% if school_type_filter == 'elementary' %}selected{% endif %}>ابتدایی</option>
+                                <option value="middle" {% if school_type_filter == 'middle' %}selected{% endif %}>متوسطه اول</option>
+                                <option value="high" {% if school_type_filter == 'high' %}selected{% endif %}>متوسطه دوم</option>
+                                <option value="combined" {% if school_type_filter == 'combined' %}selected{% endif %}>یکپارچه</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                جستجو
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{{ url_for('super_admin.schools') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-1"></i>
+                                بازنشانی
+                            </a>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </form>
+        </div>
+    </div>
+    
+    <!-- لیست مدارس -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2"></i>
+                    لیست مدارس
+                    <span class="badge bg-primary rounded-pill ms-2">{{ pagination.total }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>نام مدرسه</th>
+                                    <th>نوع</th>
+                                    <th>آدرس</th>
+                                    <th>شماره تماس</th>
+                                    <th>تاریخ ایجاد</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for school in schools %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ school.name }}</div>
+                                        {% if school.email %}
+                                            <small class="text-muted">{{ school.email }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if school.type == 'elementary' %}
+                                            <span class="badge bg-info">ابتدایی</span>
+                                        {% elif school.type == 'middle' %}
+                                            <span class="badge bg-success">متوسطه اول</span>
+                                        {% elif school.type == 'high' %}
+                                            <span class="badge bg-warning text-dark">متوسطه دوم</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">یکپارچه</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ school.address or 'آدرس ثبت نشده' }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ school.phone or 'شماره ثبت نشده' }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ school.created_at.strftime('%Y/%m/%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('super_admin.edit_school', school_id=school.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('super_admin.delete_school', school_id=school.id) }}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="حذف"
+                                               data-confirm="آیا مطمئن هستید که می‌خواهید مدرسه '{{ school.name }}' را حذف کنید؟">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ مدرسه‌ای یافت نشد
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    {% include 'partials/pagination.html' %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header bg-secondary text-white">
-        <i class="bi bi-list"></i> لیست مدارس
-    </div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>#</th>
-                    <th>نام مدرسه</th>
-                    <th>نوع</th>
-                    <th>تاریخ ایجاد</th>
-                    <th>عملیات</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for school in schools %}
-                <tr>
-                    <td>{{ school.id }}</td>
-                    <td><strong>{{ school.name }}</strong></td>
-                    <td>
-                        <span class="badge bg-{{ 'info' if school.type == 'elementary' else 'warning' if school.type == 'middle' else 'danger' }}">
-                            {{ config.SCHOOL_TYPES.get(school.type) }}
-                        </span>
-                    </td>
-                    <td>{{ school.created_at }}</td>
-                    <td>
-                        <a href="#" class="btn btn-sm btn-outline-primary disabled">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
-                        <i class="bi bi-inbox fs-1"></i><br>
-                        هیچ مدرسه‌ای یافت نشد
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- مودال ایجاد مدرسه جدید -->
+<div class="modal fade" id="addSchoolModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-school me-2"></i>
+                    ایجاد مدرسه جدید
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('super_admin.schools') }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">نام مدرسه <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required>
+                            <div class="invalid-feedback">نام مدرسه الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">نوع مدرسه <span class="text-danger">*</span></label>
+                            <select name="school_type" class="form-select" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="elementary">ابتدایی</option>
+                                <option value="middle">متوسطه اول</option>
+                                <option value="high">متوسطه دوم</option>
+                                <option value="combined">یکپارچه</option>
+                            </select>
+                            <div class="invalid-feedback">نوع مدرسه الزامی است</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">آدرس</label>
+                            <textarea name="address" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">شماره تماس</label>
+                            <input type="text" name="phone" class="form-control" placeholder="021-12345678">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ایمیل</label>
+                            <input type="email" name="email" class="form-control" placeholder="school@example.com">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        ایجاد مدرسه
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}
