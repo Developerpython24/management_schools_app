@@ -1,44 +1,327 @@
-{% extends "layout.html" %}
+{% extends "base.html" %}
+
 {% block title %}داشبورد Super Admin{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>داشبورد Super Admin</h2>
-    <div>
-        <a href="{{ url_for('super_admin.schools') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> افزودن مدرسه
-        </a>
-        <a href="{{ url_for('super_admin.admins') }}" class="btn btn-success ms-2">
-            <i class="bi bi-person-plus"></i> افزودن مدیر
-        </a>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-tachometer-alt me-2 text-primary"></i>
+                داشبورد مدیریت کل
+            </h1>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.dashboard') }}">خانه</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">داشبورد</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-</div>
-
-<div class="row">
-    {% for school in schools %}
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
+    
+    <!-- آمار اصلی -->
+    <div class="dashboard-stats">
+        <div class="card card-stats">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <h5 class="card-title">{{ school.name }}</h5>
-                    <span class="badge bg-{{ 'primary' if school.type == 'elementary' else 'warning' if school.type == 'middle' else 'danger' }}">
-                        {{ config.SCHOOL_TYPES.get(school.type) }}
-                    </span>
+                <div class="stat-icon text-primary">
+                    <i class="fas fa-school"></i>
                 </div>
-                <p class="card-text mt-2">
-                    <small class="text-muted">
-                        <i class="bi bi-calendar"></i> ایجاد: {{ school.created_at }}
-                    </small>
-                </p>
+                <h3 class="stat-value mb-0">{{ stats.total_schools }}</h3>
+                <p class="stat-label mb-0">تعداد کل مدارس</p>
+            </div>
+        </div>
+        
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="stat-icon text-info">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h3 class="stat-value mb-0">{{ stats.total_admins }}</h3>
+                <p class="stat-label mb-0">تعداد مدیران مدرسه</p>
+            </div>
+        </div>
+        
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="stat-icon text-success">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="stat-value mb-0">{{ stats.total_students }}</h3>
+                <p class="stat-label mb-0">تعداد کل دانش‌آموزان</p>
+            </div>
+        </div>
+        
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="stat-icon text-warning">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <h3 class="stat-value mb-0">{{ stats.total_teachers }}</h3>
+                <p class="stat-label mb-0">تعداد کل معلمان</p>
             </div>
         </div>
     </div>
-    {% else %}
-    <div class="col-12">
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> هنوز مدرسه‌ای ثبت نشده است.
+    
+    <div class="row">
+        <!-- آخرین مدارس -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-building me-2"></i>
+                        آخرین مدارس ایجاد شده
+                    </span>
+                    <a href="{{ url_for('super_admin.schools') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        ایجاد مدرسه جدید
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>نام مدرسه</th>
+                                    <th>نوع</th>
+                                    <th>تاریخ ایجاد</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for school in recent_schools %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ school.name }}</div>
+                                        <small class="text-muted">{{ school.type_fa }}</small>
+                                    </td>
+                                    <td>
+                                        {% if school.type == 'elementary' %}
+                                            <span class="badge bg-info">ابتدایی</span>
+                                        {% elif school.type == 'middle' %}
+                                            <span class="badge bg-success">متوسطه اول</span>
+                                        {% elif school.type == 'high' %}
+                                            <span class="badge bg-warning text-dark">متوسطه دوم</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">یکپارچه</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ school.created_at.strftime('%Y/%m/%d') }}</td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('super_admin.edit_school', school_id=school.id) }}" class="btn btn-sm btn-outline-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('super_admin.delete_school', school_id=school.id) }}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="حذف"
+                                               data-confirm="آیا مطمئن هستید که می‌خواهید این مدرسه را حذف کنید؟">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ مدرسه‌ای یافت نشد
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- آخرین فعالیت‌ها -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history me-2"></i>
+                    آخرین فعالیت‌ها
+                </div>
+                <div class="card-body recent-activities">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item p-2 border-bottom">
+                        <div class="d-flex">
+                            <div class="me-3 mt-1">
+                                {% if activity.action == 'create_school' %}
+                                    <i class="fas fa-school text-primary fs-4"></i>
+                                {% elif activity.action == 'create_admin' %}
+                                    <i class="fas fa-user-plus text-success fs-4"></i>
+                                {% elif activity.action == 'edit_school' %}
+                                    <i class="fas fa-edit text-warning fs-4"></i>
+                                {% elif activity.action == 'delete_school' %}
+                                    <i class="fas fa-trash text-danger fs-4"></i>
+                                {% elif activity.action == 'impersonate' %}
+                                    <i class="fas fa-user-secret text-info fs-4"></i>
+                                {% else %}
+                                    <i class="fas fa-bell text-secondary fs-4"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-1">
+                                    <strong>{{ activity.description }}</strong>
+                                </p>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        {{ activity.user.name }}
+                                        {% if activity.school %}
+                                            <span class="mx-1">|</span>
+                                            <i class="fas fa-school me-1"></i>
+                                            {{ activity.school.name }}
+                                        {% endif %}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ activity.timestamp.strftime('%Y/%m/%d %H:%M') }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p class="mb-0">هیچ فعالیتی یافت نشد</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
-    {% endfor %}
+    
+    <!-- آمار بر اساس نوع مدرسه -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    آمار مدارس بر اساس نوع
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="schoolTypeChart" height="250"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>نوع مدرسه</th>
+                                            <th>تعداد</th>
+                                            <th>درصد</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for type_stat in school_type_stats %}
+                                        <tr>
+                                            <td>
+                                                {% if type_stat.type == 'elementary' %}
+                                                    <i class="fas fa-book-reader text-info me-2"></i> ابتدایی
+                                                {% elif type_stat.type == 'middle' %}
+                                                    <i class="fas fa-chalkboard-teacher text-success me-2"></i> متوسطه اول
+                                                {% elif type_stat.type == 'high' %}
+                                                    <i class="fas fa-graduation-cap text-warning me-2"></i> متوسطه دوم
+                                                {% else %}
+                                                    <i class="fas fa-school text-secondary me-2"></i> یکپارچه
+                                                {% endif %}
+                                            </td>
+                                            <td class="fw-bold">{{ type_stat.count }}</td>
+                                            <td>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                                         style="width: {{ (type_stat.count / stats.total_schools * 100) | round(1) }}%" 
+                                                         aria-valuenow="{{ (type_stat.count / stats.total_schools * 100) | round(1) }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Chart.js for school types
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('schoolTypeChart').getContext('2d');
+        
+        const schoolTypeChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    {% for type_stat in school_type_stats %}
+                        '{% if type_stat.type == "elementary" %}ابتدایی{% elif type_stat.type == "middle" %}متوسطه اول{% elif type_stat.type == "high" %}متوسطه دوم{% else %}یکپارچه{% endif %}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for type_stat in school_type_stats %}
+                            {{ type_stat.count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        {% for type_stat in school_type_stats %}
+                            {% if type_stat.type == "elementary" %}
+                                '#4361ee',
+                            {% elif type_stat.type == "middle" %}
+                                '#06d6a0',
+                            {% elif type_stat.type == "high" %}
+                                '#ffd166',
+                            {% else %}
+                                '#118ab2',
+                            {% endif %}
+                        {% endfor %}
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((context.parsed / total) * 100);
+                                return `${context.label}: ${context.parsed} مدرسه (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    });
+</script>
 {% endblock %}
