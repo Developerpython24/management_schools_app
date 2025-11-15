@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}ورود به سیستم{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-primary text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <i class="fas fa-school me-2"></i>
+                        سیستم مدیریت مدرسه
+                    </h3>
+                    <p class="mb-0 opacity-75">ورود به پنل کاربری</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.login') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-4">
+                            <label for="username" class="form-label fw-bold">
+                                <i class="fas fa-user me-2 text-primary"></i>
+                                نام کاربری
+                            </label>
+                            {{ form.username(class="form-control form-control-lg", id="username", placeholder="نام کاربری خود را وارد کنید", required=True) }}
+                            {% for error in form.username.errors %}
+                                <div class="text-danger mt-1 small">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="password" class="form-label fw-bold">
+                                <i class="fas fa-lock me-2 text-primary"></i>
+                                رمز عبور
+                            </label>
+                            <div class="input-group">
+                                {{ form.password(class="form-control form-control-lg", id="password", placeholder="رمز عبور خود را وارد کنید", required=True) }}
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="#password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% for error in form.password.errors %}
+                                <div class="text-danger mt-1 small">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-4 form-check">
+                            {{ form.remember(class="form-check-input", id="remember") }}
+                            <label class="form-check-label" for="remember">
+                                مرا به خاطر بسپار
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg py-2">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                ورود به سیستم
+                            </button>
+                            
+                            <a href="{{ url_for('auth.password_reset_request') }}" class="btn btn-outline-secondary text-center py-2">
+                                <i class="fas fa-key me-2"></i>
+                                فراموشی رمز عبور
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light text-center py-3">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        سیستم امن مدیریت مدرسه - تمام حقوق محفوظ است
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelector('.toggle-password').addEventListener('click', function() {
+        const passwordInput = document.querySelector('#password');
+        const icon = this.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    });
+</script>
+{% endblock %}
