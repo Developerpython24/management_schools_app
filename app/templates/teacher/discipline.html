@@ -1,113 +1,345 @@
-{% extends "layout.html" %}
-{% block title %}انضباط - کلاس {{ class_info.name }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}نمرات انضباطی{% endblock %}
 
 {% block content %}
-<h2>مدیریت نمرات انضباط - کلاس {{ class_info.name }}</h2>
-
-<div class="card mb-3">
-    <div class="card-header bg-light">
-        <form method="GET" class="row">
-            <div class="col-md-4">
-                <label class="form-label">تاریخ</label>
-                <input type="date" name="date" class="form-control" 
-                       value="{{ selected_date }}" onchange="this.form.submit()">
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-gavel me-2 text-warning"></i>
+                    نمرات انضباطی کلاس
+                </h1>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDisciplineModal">
+                    <i class="fas fa-plus me-1"></i>
+                    نمره انضباطی جدید
+                </button>
             </div>
-            <div class="col-md-8 align-self-end">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> برای مدیریت حافظه، فقط اطلاعات روز قابل ویرایش است
-                </small>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('teacher.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">نمرات انضباطی</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- اطلاعات کلاس و فیلتر تاریخ -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chalkboard me-2"></i>
+                        {{ class_info.name }} ({{ class_info.grade }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-user-graduate me-2 text-muted"></i>
+                            <strong>تعداد دانش‌آموزان:</strong>
+                            <span class="float-end badge bg-primary">{{ students|length }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-chalkboard-teacher me-2 text-muted"></i>
+                            <strong>معلم کلاس:</strong>
+                            <span class="float-end badge bg-success">{{ current_user.name }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-book me-2 text-muted"></i>
+                            <strong>درس:</strong>
+                            <span class="float-end badge bg-info">{{ subject_name or 'بدون درس' }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-door-open me-2 text-muted"></i>
+                            <strong>شماره کلاس:</strong>
+                            <span class="float-end badge bg-warning">{{ class_info.room or 'تعیین نشده' }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </form>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    انتخاب تاریخ
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('teacher.discipline', class_id=class_id) }}" class="row g-2">
+                        <div class="col-md-8">
+                            <input type="date" name="date" class="form-control" 
+                                   value="{{ selected_date }}" max="{{ today.isoformat() }}"
+                                   required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                نمایش
+                            </button>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="btn-group w-100">
+                                <a href="{{ url_for('teacher.discipline', class_id=class_id, date=(selected_date | add_days(-1)).isoformat()) }}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary">
+                                    {{ selected_date | format_persian_date }}
+                                </button>
+                                <a href="{{ url_for('teacher.discipline', class_id=class_id, date=(selected_date | add_days(1)).isoformat()) }}" 
+                                   class="btn btn-outline-secondary {% if selected_date >= today %}disabled{% endif %}">
+                                    <i class="fas fa-arrow-left"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
-
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <i class="bi bi-plus-circle"></i> ثبت نمره انضباط جدید
+    
+    <!-- خلاصه نمرات انضباطی -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-chart-bar me-2"></i>
+                        خلاصه نمرات انضباطی
+                    </span>
+                    <span class="badge bg-primary">{{ selected_date | format_persian_date }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-1 row-cols-md-3 g-4">
+                        <div class="col">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-success">
+                                        <i class="fas fa-plus-circle fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.positive_count }}</h3>
+                                    <p class="stat-label mb-0">نمرات مثبت</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ (stats.positive_count / (stats.positive_count + stats.negative_count) * 100) | round(1) }}%" aria-valuenow="{{ (stats.positive_count / (stats.positive_count + stats.negative_count) * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-danger">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-danger">
+                                        <i class="fas fa-minus-circle fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.negative_count }}</h3>
+                                    <p class="stat-label mb-0">نمرات منفی</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (stats.negative_count / (stats.positive_count + stats.negative_count) * 100) | round(1) }}%" aria-valuenow="{{ (stats.negative_count / (stats.positive_count + stats.negative_count) * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-primary">
+                                        <i class="fas fa-balance-scale fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.total_points }}</h3>
+                                    <p class="stat-label mb-0">مجموع امتیازات</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (stats.total_points / 100 * 100) | round(1) }}%" aria-valuenow="{{ (stats.total_points / 100 * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="POST">
-            <div class="row">
-                <div class="col-md-3 mb-2">
-                    <label class="form-label">دانش‌آموز</label>
-                    <select name="student_id" class="form-select" required>
-                        <option value="">انتخاب کنید</option>
-                        {% for student in students %}
-                        <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
-                        {% endfor %}
-                    </select>
+    
+    <!-- لیست نمرات انضباطی -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-list me-2"></i>
+                        لیست نمرات انضباطی
+                    </span>
+                    <div class="col-md-3">
+                        <input type="text" id="search-students" class="form-control" placeholder="جستجو...">
+                    </div>
                 </div>
-                <div class="col-md-2 mb-2">
-                    <label class="form-label">نوع</label>
-                    <select name="type" class="form-select" required>
-                        <option value="positive">مثبت</option>
-                        <option value="negative">منفی</option>
-                    </select>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="discipline-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 20%">دانش‌آموز</th>
+                                    <th style="width: 15%">کد</th>
+                                    <th style="width: 20%">نوع</th>
+                                    <th style="width: 15%">امتیاز</th>
+                                    <th style="width: 25%">توضیحات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in discipline_records %}
+                                <tr>
+                                    <td class="align-middle">
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index }}</span>
+                                    </td>
+                                    <td class="align-middle fw-bold">
+                                        {{ record.student.full_name }}
+                                        <small class="d-block text-muted">{{ record.student.grade }}</small>
+                                    </td>
+                                    <td class="align-middle">
+                                        <code>{{ record.student.code }}</code>
+                                    </td>
+                                    <td class="align-middle">
+                                        {% if record.type == 'positive' %}
+                                            <span class="badge bg-success">مثبت</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">منفی</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle fw-bold {% if record.points > 0 %}text-success{% elif record.points < 0 %}text-danger{% endif %}">
+                                        {% if record.points > 0 %}+{% endif %}{{ record.points }}
+                                    </td>
+                                    <td class="align-middle">
+                                        <small>{{ record.description | truncate(50) }}</small>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ نمره انضباطی برای این تاریخ ثبت نشده است
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="col-md-2 mb-2">
-                    <label class="form-label">امتیاز</label>
-                    <input type="number" name="points" class="form-control" 
-                           placeholder="1-10" min="1" max="10" required>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label">توضیحات</label>
-                    <input type="text" name="description" class="form-control" 
-                           placeholder="دلیل نمره">
-                </div>
-                <div class="col-md-2 mb-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="bi bi-save"></i> ثبت
+                <div class="card-footer bg-light text-end">
+                    <button type="button" class="btn btn-success" id="export-discipline">
+                        <i class="fas fa-file-excel me-1"></i>
+                        خروجی اکسل
                     </button>
                 </div>
             </div>
-        </form>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header bg-secondary text-white">
-        <i class="bi bi-list"></i> نمرات انضباط ثبت‌شده در تاریخ {{ selected_date }}
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>دانش‌آموز</th>
-                        <th>نوع</th>
-                        <th>امتیاز</th>
-                        <th>توضیحات</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for d in discipline %}
-                    <tr>
-                        <td><strong>{{ d.first_name }} {{ d.last_name }}</strong></td>
-                        <td>
-                            <span class="badge bg-{{ 'success' if d.type == 'positive' else 'danger' }}">
-                                {{ 'مثبت' if d.type == 'positive' else 'منفی' }}
-                            </span>
-                        </td>
-                        <td>{{ d.points }}</td>
-                        <td>{{ d.description or '-' }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger disabled">
-                                <i class="bi bi-trash"></i> حذف
-                            </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-4">
-                            <i class="bi bi-inbox fs-1"></i><br>
-                            نمره انضباطی برای این تاریخ ثبت نشده است
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
+
+<!-- مودال ایجاد نمره انضباطی جدید -->
+<div class="modal fade" id="addDisciplineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-gavel me-2"></i>
+                    ثبت نمره انضباطی جدید
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('teacher.discipline', class_id=class_id) }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <input type="hidden" name="date" value="{{ selected_date }}">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">دانش‌آموز <span class="text-danger">*</span></label>
+                            <select name="student_id" class="form-select" required>
+                                <option value="">انتخاب دانش‌آموز</option>
+                                {% for student in students %}
+                                    <option value="{{ student.id }}">{{ student.full_name }} ({{ student.code }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">دانش‌آموز الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">نوع نمره <span class="text-danger">*</span></label>
+                            <select name="type" class="form-select" required>
+                                <option value="positive">مثبت</option>
+                                <option value="negative">منفی</option>
+                            </select>
+                            <div class="invalid-feedback">نوع نمره الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">امتیاز <span class="text-danger">*</span></label>
+                            <input type="number" name="points" class="form-control" value="1" min="-10" max="10" required>
+                            <div class="invalid-feedback">امتیاز باید بین -10 تا 10 باشد</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">معلم</label>
+                            <input type="text" class="form-control" value="{{ current_user.name }}" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">توضیحات <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control" rows="3" required placeholder="توضیحات دقیق رفتار دانش‌آموز..."></textarea>
+                            <div class="invalid-feedback">توضیحات الزامی است</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i>
+                        ثبت نمره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Student search
+        document.getElementById('search-students').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#discipline-table tbody tr');
+            
+            rows.forEach(row => {
+                if (row.querySelector('td[colspan]')) return; // Skip empty row
+                
+                const studentName = row.cells[1].textContent.toLowerCase();
+                const studentCode = row.cells[2].textContent.toLowerCase();
+                
+                if (studentName.includes(searchTerm) || studentCode.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Export discipline records
+        document.getElementById('export-discipline').addEventListener('click', function() {
+            const params = new URLSearchParams(window.location.search);
+            params.set('class_id', '{{ class_id }}');
+            window.location.href = '/teacher/export-discipline?' + params.toString();
+        });
+    });
+</script>
 {% endblock %}
