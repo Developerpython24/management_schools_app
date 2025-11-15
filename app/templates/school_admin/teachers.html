@@ -1,98 +1,267 @@
-{% extends "layout.html" %}
-{% block title %}مدیریت معلمان{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}معلمان{% endblock %}
 
 {% block content %}
-<h2>مدیریت معلمان</h2>
-
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <i class="bi bi-person-plus"></i> افزودن معلم جدید
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>
+                    مدیریت معلمان
+                </h1>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTeacherModal">
+                    <i class="fas fa-plus me-1"></i>
+                    معلم جدید
+                </button>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('school_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">معلمان</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="POST">
-            <div class="row">
-                <div class="col-md-3 mb-2">
-                    <input type="text" name="username" class="form-control" 
-                           placeholder="نام کاربری" required>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <input type="password" name="password" class="form-control" 
-                           placeholder="رمز عبور" required>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <input type="text" name="name" class="form-control" 
-                           placeholder="نام کامل" required>
-                </div>
-                <div class="col-md-3 mb-2">
-                    <input type="text" name="phone" class="form-control" 
-                           placeholder="شماره تماس">
-                </div>
-                <div class="col-md-12 mb-2">
-                    <label class="form-label">دروس تدریس (می‌توانید انتخاب نکنید)</label>
-                    <select name="subjects" class="form-select" multiple size="3">
-                        {% for subject in subjects %}
-                        <option value="{{ subject.id }}">{{ subject.name }} (پایه {{ subject.grade }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-12">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="bi bi-save"></i> افزودن معلم
-                    </button>
+    
+    <!-- فیلترها و جستجو -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('school_admin.teachers') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">جستجو</label>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="نام، نام خانوادگی یا نام کاربری..." 
+                                   value="{{ search_query }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">درسهای تدریس شده</label>
+                            <select name="subject" class="form-select">
+                                <option value="">همه دروس</option>
+                                {% for subject in subjects %}
+                                    <option value="{{ subject.id }}" {% if subject_filter == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                جستجو
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{{ url_for('school_admin.teachers') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-1"></i>
+                                بازنشانی
+                            </a>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </form>
+        </div>
     </div>
-</div>
-
-<div class="card">
-    <div class="card-header bg-secondary text-white">
-        <i class="bi bi-list"></i> لیست معلمان ({{ teachers|length }})
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>نام</th>
-                        <th>نام کاربری</th>
-                        <th>شماره تماس</th>
-                        <th>دروس</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for teacher in teachers %}
-                    <tr>
-                        <td>{{ teacher.id }}</td>
-                        <td><strong>{{ teacher.name }}</strong></td>
-                        <td><code>{{ teacher.username }}</code></td>
-                        <td dir="ltr">{{ teacher.phone or '-' }}</td>
-                        <td>
-                            {% if teacher.subjects %}
-                                <small>{{ teacher.subjects[:30] }}{% if teacher.subjects|length > 30 %}...{% endif %}</small>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary disabled">
-                                <i class="bi bi-pencil"></i> ویرایش
-                            </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
-                            <i class="bi bi-inbox fs-1"></i><br>
-                            هیچ معلمی ثبت نشده است
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    
+    <!-- لیست معلمان -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2"></i>
+                    لیست معلمان
+                    <span class="badge bg-primary rounded-pill ms-2">{{ pagination.total }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>نام کاربری</th>
+                                    <th>نام کامل</th>
+                                    <th>شماره تماس</th>
+                                    <th>ایمیل</th>
+                                    <th>درسهای تدریس شده</th>
+                                    <th>تاریخ ثبت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for teacher in teachers %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</span>
+                                    </td>
+                                    <td>
+                                        <code>{{ teacher.username }}</code>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ teacher.name }}</div>
+                                        <small class="text-muted">{{ teacher.code or 'کد ثبت نشده' }}</small>
+                                    </td>
+                                    <td>
+                                        {% if teacher.phone %}
+                                            <a href="tel:{{ teacher.phone }}" class="text-decoration-none">
+                                                <i class="fas fa-phone me-1"></i>{{ teacher.phone }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">ثبت نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if teacher.email %}
+                                            <a href="mailto:{{ teacher.email }}" class="text-decoration-none">
+                                                <i class="fas fa-envelope me-1"></i>{{ teacher.email }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">ثبت نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for subject in teacher.subjects_list %}
+                                                <span class="badge bg-success">{{ subject }}</span>
+                                            {% else %}
+                                                <span class="text-muted">بدون درس</span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ teacher.created_at.strftime('%Y/%m/%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('school_admin.edit_teacher', teacher_id=teacher.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('teacher.dashboard', teacher_id=teacher.id) }}" 
+                                               class="btn btn-sm btn-outline-info" 
+                                               title="مشاهده داشبورد معلم">
+                                                <i class="fas fa-tachometer-alt"></i>
+                                            </a>
+                                            <a href="{{ url_for('school_admin.delete_teacher', teacher_id=teacher.id) }}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="حذف"
+                                               data-confirm="آیا مطمئن هستید که می‌خواهید معلم '{{ teacher.name }}' را حذف کنید؟">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ معلمی یافت نشد
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    {% include 'partials/pagination.html' %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- مودال ایجاد معلم جدید -->
+<div class="modal fade" id="addTeacherModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>
+                    ایجاد معلم جدید
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('school_admin.teachers') }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">نام کاربری <span class="text-danger">*</span></label>
+                            <input type="text" name="username" class="form-control" required>
+                            <div class="invalid-feedback">نام کاربری الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">رمز عبور <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control" required>
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="input[name='password']">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">رمز عبور الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">نام کامل <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required>
+                            <div class="invalid-feedback">نام کامل الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">شماره تماس</label>
+                            <input type="text" name="phone" class="form-control" placeholder="09123456789">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ایمیل</label>
+                            <input type="email" name="email" class="form-control" placeholder="teacher@example.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">درسهای تدریس شده</label>
+                            <select name="subjects" class="form-select" multiple>
+                                {% for subject in subjects %}
+                                    <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        ایجاد معلم
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.toggle-password').forEach(element => {
+        element.addEventListener('click', function() {
+            const targetSelector = this.getAttribute('data-target');
+            const input = document.querySelector(targetSelector);
+            const icon = this.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+</script>
 {% endblock %}
