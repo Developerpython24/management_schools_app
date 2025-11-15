@@ -1,118 +1,466 @@
-{% extends "layout.html" %}
-{% block title %}مهارت‌ها - کلاس {{ class_info.name }}{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}ارزیابی مهارت‌ها{% endblock %}
 
 {% block content %}
-<h2>ارزیابی مهارت‌ها - کلاس {{ class_info.name }} (پایه {{ class_info.grade }})</h2>
-
-<div class="card mb-3">
-    <div class="card-header bg-light">
-        <form method="GET" class="row">
-            <div class="col-md-4">
-                <label class="form-label">تاریخ</label>
-                <input type="date" name="date" class="form-control" 
-                       value="{{ selected_date }}" onchange="this.form.submit()">
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-medal me-2 text-info"></i>
+                    ارزیابی مهارت‌های دانش‌آموزان
+                </h1>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSkillAssessmentModal">
+                    <i class="fas fa-plus me-1"></i>
+                    ارزیابی جدید
+                </button>
             </div>
-            <div class="col-md-8 align-self-end">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> برای مدیریت حافظه، فقط اطلاعات روز قابل ویرایش است
-                </small>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('teacher.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">ارزیابی مهارت‌ها</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- اطلاعات کلاس و فیلتر تاریخ -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chalkboard me-2"></i>
+                        {{ class_info.name }} ({{ class_info.grade }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-user-graduate me-2 text-muted"></i>
+                            <strong>تعداد دانش‌آموزان:</strong>
+                            <span class="float-end badge bg-primary">{{ students|length }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-chalkboard-teacher me-2 text-muted"></i>
+                            <strong>معلم کلاس:</strong>
+                            <span class="float-end badge bg-success">{{ current_user.name }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-book me-2 text-muted"></i>
+                            <strong>درس:</strong>
+                            <span class="float-end badge bg-info">{{ subject_name or 'بدون درس' }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <i class="fas fa-door-open me-2 text-muted"></i>
+                            <strong>شماره کلاس:</strong>
+                            <span class="float-end badge bg-warning">{{ class_info.room or 'تعیین نشده' }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </form>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    انتخاب تاریخ
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('teacher.skills', class_id=class_id) }}" class="row g-2">
+                        <div class="col-md-8">
+                            <input type="date" name="date" class="form-control" 
+                                   value="{{ selected_date }}" max="{{ today.isoformat() }}"
+                                   required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                نمایش
+                            </button>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="btn-group w-100">
+                                <a href="{{ url_for('teacher.skills', class_id=class_id, date=(selected_date | add_days(-1)).isoformat()) }}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary">
+                                    {{ selected_date | format_persian_date }}
+                                </button>
+                                <a href="{{ url_for('teacher.skills', class_id=class_id, date=(selected_date | add_days(1)).isoformat()) }}" 
+                                   class="btn btn-outline-secondary {% if selected_date >= today %}disabled{% endif %}">
+                                    <i class="fas fa-arrow-left"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
-
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <i class="bi bi-plus-circle"></i> ثبت ارزیابی جدید
+    
+    <!-- خلاصه ارزیابی‌های مهارت -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-chart-pie me-2"></i>
+                        خلاصه ارزیابی‌های مهارت
+                    </span>
+                    <span class="badge bg-primary">{{ selected_date | format_persian_date }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-1 row-cols-md-4 g-4">
+                        <div class="col">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-primary">
+                                        <i class="fas fa-medal fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.total_assessments }}</h3>
+                                    <p class="stat-label mb-0">تعداد ارزیابی‌ها</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-success">
+                                        <i class="fas fa-star fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.excellent_count }}</h3>
+                                    <p class="stat-label mb-0">عالی</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ (stats.excellent_count / stats.total_assessments * 100) | round(1) }}%" aria-valuenow="{{ (stats.excellent_count / stats.total_assessments * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-info">
+                                        <i class="fas fa-thumbs-up fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.very_good_count }}</h3>
+                                    <p class="stat-label mb-0">خیلی خوب</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ (stats.very_good_count / stats.total_assessments * 100) | round(1) }}%" aria-valuenow="{{ (stats.very_good_count / stats.total_assessments * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <div class="stat-icon text-warning">
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    </div>
+                                    <h3 class="stat-value mb-0">{{ stats.good_count }}</h3>
+                                    <p class="stat-label mb-0">خوب</p>
+                                    <div class="mt-2">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ (stats.good_count / stats.total_assessments * 100) | round(1) }}%" aria-valuenow="{{ (stats.good_count / stats.total_assessments * 100) | round(1) }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="POST">
-            <div class="row">
-                <div class="col-md-3 mb-2">
-                    <label class="form-label">دانش‌آموز</label>
-                    <select name="student_id" class="form-select" required>
-                        <option value="">انتخاب کنید</option>
-                        {% for student in students %}
-                        <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
-                        {% endfor %}
-                    </select>
+    
+    <!-- لیست ارزیابی‌های مهارت -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-list me-2"></i>
+                        لیست ارزیابی‌های مهارت
+                    </span>
+                    <div class="col-md-3">
+                        <input type="text" id="search-assessments" class="form-control" placeholder="جستجو...">
+                    </div>
                 </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label">مهارت</label>
-                    <select name="skill_id" class="form-select" required>
-                        {% for skill in skills %}
-                        <option value="{{ skill.id }}">{{ skill.name }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="skills-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 20%">دانش‌آموز</th>
+                                    <th style="width: 15%">مهارت</th>
+                                    <th style="width: 15%">سطح</th>
+                                    <th style="width: 30%">یادداشت‌ها</th>
+                                    <th style="width: 15%">تاریخ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assessment in assessments %}
+                                <tr>
+                                    <td class="align-middle">
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index }}</span>
+                                    </td>
+                                    <td class="align-middle fw-bold">
+                                        {{ assessment.student.full_name }}
+                                        <small class="d-block text-muted">{{ assessment.student.grade }}</small>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="badge bg-info">{{ assessment.skill.name }}</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        {% if assessment.level == 'excellent' %}
+                                            <span class="badge bg-success">عالی</span>
+                                        {% elif assessment.level == 'very_good' %}
+                                            <span class="badge bg-info">خیلی خوب</span>
+                                        {% elif assessment.level == 'good' %}
+                                            <span class="badge bg-warning text-dark">خوب</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">نیاز به تلاش</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle">
+                                        <small>{{ assessment.notes | truncate(50) or 'بدون یادداشت' }}</small>
+                                    </td>
+                                    <td class="align-middle">
+                                        <small class="text-muted">{{ assessment.date.strftime('%Y/%m/%d') }}</small>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ ارزیابی مهارتی برای این تاریخ ثبت نشده است
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="col-md-3 mb-2">
-                    <label class="form-label">سطح ارزیابی</label>
-                    <select name="level" class="form-select" required>
-                        <option value="excellent">عالی</option>
-                        <option value="very_good">خیلی خوب</option>
-                        <option value="good">خوب</option>
-                        <option value="needs_effort">نیاز به تلاش</option>
-                    </select>
-                </div>
-                <div class="col-md-2 mb-2">
-                    <label class="form-label">یادداشت</label>
-                    <input type="text" name="notes" class="form-control" 
-                           placeholder="توضیحات اختیاری">
-                </div>
-                <div class="col-md-1 mb-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="bi bi-save"></i> ثبت
+                <div class="card-footer bg-light text-end">
+                    <button type="button" class="btn btn-success" id="export-skills">
+                        <i class="fas fa-file-excel me-1"></i>
+                        خروجی اکسل
                     </button>
                 </div>
             </div>
-        </form>
+        </div>
     </div>
-</div>
-
-<div class="card">
-    <div class="card-header bg-secondary text-white">
-        <i class="bi bi-list"></i> ارزیابی‌های ثبت‌شده در تاریخ {{ selected_date }}
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>دانش‌آموز</th>
-                        <th>مهارت</th>
-                        <th>سطح</th>
-                        <th>یادداشت</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for a in assessments %}
-                    <tr>
-                        <td><strong>{{ a.first_name }} {{ a.last_name }}</strong></td>
-                        <td>{{ a.skill_name }}</td>
-                        <td>
-                            <span class="badge bg-{{ 'success' if a.level == 'excellent' else 'primary' if a.level == 'very_good' else 'warning' if a.level == 'good' else 'danger' }}">
-                                {{ {'excellent':'عالی','very_good':'خیلی خوب','good':'خوب','needs_effort':'نیاز به تلاش'}[a.level] }}
-                            </span>
-                        </td>
-                        <td>{{ a.notes or '-' }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger disabled">
-                                <i class="bi bi-trash"></i> حذف
-                            </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-4">
-                            <i class="bi bi-inbox fs-1"></i><br>
-                            ارزیابی مهارتی برای این تاریخ ثبت نشده است
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    
+    <!-- نمودارهای آماری -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    نمودارهای آماری ارزیابی‌ها
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="skills-level-chart" height="250"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="skills-by-category-chart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- مودال ایجاد ارزیابی مهارت جدید -->
+<div class="modal fade" id="addSkillAssessmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-medal me-2"></i>
+                    ثبت ارزیابی مهارت جدید
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('teacher.skills', class_id=class_id) }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <input type="hidden" name="date" value="{{ selected_date }}">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">دانش‌آموز <span class="text-danger">*</span></label>
+                            <select name="student_id" class="form-select" required>
+                                <option value="">انتخاب دانش‌آموز</option>
+                                {% for student in students %}
+                                    <option value="{{ student.id }}">{{ student.full_name }} ({{ student.code }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">دانش‌آموز الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">مهارت <span class="text-danger">*</span></label>
+                            <select name="skill_id" class="form-select" required>
+                                <option value="">انتخاب مهارت</option>
+                                {% for skill in skills %}
+                                    <option value="{{ skill.id }}">{{ skill.name }} ({{ skill.category_fa }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">مهارت الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">سطح <span class="text-danger">*</span></label>
+                            <select name="level" class="form-select" required>
+                                <option value="excellent">عالی</option>
+                                <option value="very_good">خیلی خوب</option>
+                                <option value="good">خوب</option>
+                                <option value="needs_effort">نیاز به تلاش</option>
+                            </select>
+                            <div class="invalid-feedback">سطح الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">معلم</label>
+                            <input type="text" class="form-control" value="{{ current_user.name }}" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">یادداشت‌ها</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="یادداشت‌های اختیاری درباره عملکرد دانش‌آموز..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-1"></i>
+                        ثبت ارزیابی
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Student search
+        document.getElementById('search-assessments').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#skills-table tbody tr');
+            
+            rows.forEach(row => {
+                if (row.querySelector('td[colspan]')) return; // Skip empty row
+                
+                const studentName = row.cells[1].textContent.toLowerCase();
+                const skillName = row.cells[2].textContent.toLowerCase();
+                
+                if (studentName.includes(searchTerm) || skillName.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Skills level chart
+        const levelCtx = document.getElementById('skills-level-chart').getContext('2d');
+        new Chart(levelCtx, {
+            type: 'doughnut',
+             {
+                labels: ['عالی', 'خیلی خوب', 'خوب', 'نیاز به تلاش'],
+                datasets: [{
+                     [{{ stats.excellent_count }}, {{ stats.very_good_count }}, {{ stats.good_count }}, {{ stats.needs_effort_count }}],
+                    backgroundColor: [
+                        '#06d6a0',
+                        '#118ab2',
+                        '#ffd166',
+                        '#ef476f'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((context.parsed / total) * 100);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+        
+        // Skills by category chart
+        const categoryCtx = document.getElementById('skills-by-category-chart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'bar',
+             {
+                labels: ['تحصیلی', 'ارتباطی', 'فنی', 'اجتماعی'],
+                datasets: [{
+                    label: 'تعداد ارزیابی‌ها',
+                     [{{ stats.academic_count }}, {{ stats.communication_count }}, {{ stats.technical_count }}, {{ stats.social_count }}],
+                    backgroundColor: [
+                        '#4361ee',
+                        '#06d6a0',
+                        '#ffd166',
+                        '#ef476f'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Export skills assessments
+        document.getElementById('export-skills').addEventListener('click', function() {
+            const params = new URLSearchParams(window.location.search);
+            params.set('class_id', '{{ class_id }}');
+            window.location.href = '/teacher/export-skills?' + params.toString();
+        });
+    });
+</script>
 {% endblock %}
