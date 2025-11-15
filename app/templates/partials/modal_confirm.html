@@ -1,0 +1,42 @@
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title text-dark">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    تأیید عملیات
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="confirmMessage">
+                    آیا مطمئن هستید که می‌خواهید این عملیات را انجام دهید؟
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmButton">
+                    <i class="fas fa-check me-1"></i>
+                    تأیید
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmAction(message, callback) {
+        document.getElementById('confirmMessage').textContent = message || 'آیا مطمئن هستید؟';
+        const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        
+        document.getElementById('confirmButton').onclick = function() {
+            callback();
+            modal.hide();
+        };
+        
+        modal.show();
+    }
+</script>
