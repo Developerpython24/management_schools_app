@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}مدیران مدرسه{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-user-tie me-2 text-primary"></i>
+                    مدیران مدرسه
+                </h1>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                    <i class="fas fa-plus me-1"></i>
+                    ایجاد مدیر جدید
+                </button>
+            </div>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb bg-light p-2 rounded">
+                    <li class="breadcrumb-item"><a href="{{ url_for('super_admin.dashboard') }}">داشبورد</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">مدیران مدرسه</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- فیلترها و جستجو -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('super_admin.admins') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">جستجو</label>
+                            <input type="text" name="search" class="form-control" 
+                                   placeholder="نام، نام کاربری یا نام مدرسه..." 
+                                   value="{{ search_query }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">مدرسه</label>
+                            <select name="school" class="form-select">
+                                <option value="">همه مدارس</option>
+                                {% for school_stat in school_stats %}
+                                    <option value="{{ school_stat.id }}" {% if school_filter == school_stat.id %}selected{% endif %}>
+                                        {{ school_stat.name }} ({{ school_stat.admin_count }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>
+                                جستجو
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{{ url_for('super_admin.admins') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-redo me-1"></i>
+                                بازنشانی
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- لیست مدیران -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-list me-2"></i>
+                    لیست مدیران
+                    <span class="badge bg-primary rounded-pill ms-2">{{ pagination.total }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>نام کاربری</th>
+                                    <th>نام کامل</th>
+                                    <th>مدرسه</th>
+                                    <th>شماره تماس</th>
+                                    <th>ایمیل</th>
+                                    <th>تاریخ ایجاد</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for admin in admins %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</span>
+                                    </td>
+                                    <td>
+                                        <code>{{ admin.username }}</code>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ admin.name }}</div>
+                                        {% if admin.is_active %}
+                                            <span class="badge bg-success">فعال</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">غیرفعال</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if admin.school %}
+                                            <span class="badge bg-primary">{{ admin.school.name }}</span>
+                                            <br>
+                                            <small class="text-muted">{{ admin.school.type_fa }}</small>
+                                        {% else %}
+                                            <span class="text-muted">بدون مدرسه</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if admin.phone %}
+                                            <a href="tel:{{ admin.phone }}" class="text-decoration-none">
+                                                <i class="fas fa-phone me-1"></i>{{ admin.phone }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">ثبت نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if admin.email %}
+                                            <a href="mailto:{{ admin.email }}" class="text-decoration-none">
+                                                <i class="fas fa-envelope me-1"></i>{{ admin.email }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">ثبت نشده</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ admin.created_at.strftime('%Y/%m/%d') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ url_for('super_admin.edit_admin', admin_id=admin.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('super_admin.impersonate_admin', admin_id=admin.id) }}" 
+                                               class="btn btn-sm btn-outline-info" 
+                                               title="ورود به عنوان این مدیر">
+                                                <i class="fas fa-user-secret"></i>
+                                            </a>
+                                            <a href="{{ url_for('super_admin.delete_admin', admin_id=admin.id) }}" 
+                                               class="btn btn-sm btn-outline-danger" 
+                                               title="حذف"
+                                               data-confirm="آیا مطمئن هستید که می‌خواهید مدیر '{{ admin.name }}' را حذف کنید؟">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            هیچ مدیری یافت نشد
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    {% include 'partials/pagination.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال ایجاد مدیر جدید -->
+<div class="modal fade" id="addAdminModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    ایجاد مدیر جدید
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('super_admin.admins') }}" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">نام کاربری <span class="text-danger">*</span></label>
+                            <input type="text" name="username" class="form-control" required>
+                            <div class="invalid-feedback">نام کاربری الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">نام کامل <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required>
+                            <div class="invalid-feedback">نام کامل الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">رمز عبور <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control" required>
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="input[name='password']">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">رمز عبور الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">تایید رمز عبور <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" name="confirm_password" class="form-control" required>
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="input[name='confirm_password']">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">تایید رمز عبور الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">مدرسه <span class="text-danger">*</span></label>
+                            <select name="school_id" class="form-select" required>
+                                <option value="">انتخاب مدرسه</option>
+                                {% for school in schools %}
+                                    <option value="{{ school.id }}">{{ school.name }} ({{ school.type_fa }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">مدرسه الزامی است</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">شماره تماس</label>
+                            <input type="text" name="phone" class="form-control" placeholder="09123456789">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">ایمیل</label>
+                            <input type="email" name="email" class="form-control" placeholder="admin@example.com">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        ایجاد مدیر
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Toggle password visibility in modal
+    document.querySelectorAll('.toggle-password').forEach(element => {
+        element.addEventListener('click', function() {
+            const targetSelector = this.getAttribute('data-target');
+            const input = document.querySelector(targetSelector);
+            const icon = this.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+</script>
+{% endblock %}
