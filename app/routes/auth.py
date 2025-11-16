@@ -204,7 +204,7 @@ def reset_password(token):
     form = PasswordResetForm()
     
     if form.validate_on_submit():
-        if form.new_password.data != form.confirm_password.
+        if form.new_password.data != form.confirm_password
             flash('رمز عبور‌ها مطابقت ندارند', 'danger')
             return render_template('auth/reset_password.html', form=form, token=token)
         
