@@ -3,7 +3,20 @@ from config import Config
 from app.extensions import db, migrate, login_manager, mail, csrf
 from app.models import init_database, User
 import logging
+from datetime import datetime
 
+def register_context_processors(app):
+    """Register custom context processors for templates"""
+    @app.context_processor
+    def utility_processor():
+        """Custom template context containing useful functions and variables"""
+        return dict(
+            now=datetime.now,
+            current_year=datetime.now().year,
+            format_datetime=lambda dt: dt.strftime('%Y/%m/%d %H:%M:%S') if dt else '',
+            format_date=lambda dt: dt.strftime('%Y/%m/%d') if dt else '',
+            format_persian_date=lambda dt: jdatetime.date.fromgregorian(date=dt).strftime('%Y/%m/%d') if dt else ''
+        )
 def create_app(config_class=Config):
     """Factory function to create Flask application"""
     app = Flask(__name__)
