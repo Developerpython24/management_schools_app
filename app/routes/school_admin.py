@@ -213,7 +213,7 @@ def settings():
             current_user.phone = form.phone.data
             
             # تغییر رمز عبور
-            if form.new_password.
+            if form.new_password:
                 current_user.set_password(form.new_password.data)
             
             db.session.commit()
