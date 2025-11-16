@@ -1,11 +1,8 @@
 from flask import Flask, current_app
-from flask_login import LoginManager, user_loader  #  اضافه شده
 from config import Config
-from app.extensions import db, migrate, mail, csrf
-from app.models import User  #  اضافه شده
+from app.extensions import db, migrate, login_manager, mail, csrf
+from app.models import init_database, User
 import logging
-
-login_manager = LoginManager()  # خارج از create_app
 
 def create_app(config_class=Config):
     """Factory function to create Flask application"""
@@ -15,7 +12,7 @@ def create_app(config_class=Config):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-    login_manager.init_app(app)  #  اینجا init می‌شود
+    login_manager.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
     
@@ -40,16 +37,6 @@ def create_app(config_class=Config):
     
     # Register shell context
     register_shell_context(app)
-    
-    #  اینجا user_loader را تعریف می‌کنیم
-    @login_manager.user_loader
-    def load_user(user_id):
-        """Load user from database for Flask-Login"""
-        try:
-            return User.query.get(int(user_id))
-        except:
-            app.logger.error(f"Error loading user with ID: {user_id}")
-            return None
     
     return app
 
@@ -111,3 +98,12 @@ def register_shell_context(app):
             # 'User': User,
             # 'School': School,
         }
+
+@login_manager.user_loader
+def load_user(user_id):
+    """Load user from database for Flask-Login"""
+    try:
+        return User.query.get(int(user_id))
+    except Exception as e:
+        current_app.logger.error(f"Error loading user with ID {user_id}: {str(e)}")
+        return None
