@@ -50,7 +50,8 @@ def create_app(config_class=Config):
     
     # Register shell context
     register_shell_context(app)
-    
+    # Register context processors
+    register_context_processors(app)
     return app
 
 def setup_logging(app):
