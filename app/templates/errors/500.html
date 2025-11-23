@@ -37,11 +37,11 @@
                                 جزئیات خطا: {{ error | truncate(100) }}
                             </p>
                         {% endif %}
-                        <!-- ✅ اصلاح خطای datetime -->
+                        <!-- ✅ اصلاح خطای format_datetime -->
                         <p class="text-muted mb-0 small mt-2">
                             <i class="fas fa-clock me-1"></i>
-                            <!-- ✅ استفاده صحیح از now() و format_datetime -->
-                            زمان خطا: {{ now() | format_datetime }}
+                            <!-- ✅ استفاده صحیح از now() -->
+                            زمان خطا: {{ now().strftime('%Y/%m/%d %H:%M:%S') }}
                         </p>
                     </div>
                 </div>
@@ -49,8 +49,7 @@
             <div class="text-center mt-4 text-muted">
                 <p class="mb-0">
                     <i class="fas fa-clock me-1"></i>
-                    <!-- ✅ استفاده صحیح از now() برای زمان فعلی -->
-                    زمان فعلی سرور: {{ now() | format_datetime }}
+                    زمان فعلی سرور: {{ now().strftime('%Y/%m/%d %H:%M:%S') }}
                 </p>
             </div>
         </div>
