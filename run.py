@@ -4,14 +4,15 @@ import logging
 from logging.handlers import RotatingFileHandler
 import signal
 import sys
+from urllib.parse import url_parse
 
 # تنظیم لاگینگ
-if not os.path.exists('logs'):
-    os.mkdir('logs')
+if not os.path.exists('/opt/render/project/src/logs'):
+    os.makedirs('/opt/render/project/src/logs', exist_ok=True)
 
 # تنظیمات لاگینگ برای production
 file_handler = RotatingFileHandler(
-    '/opt/render/project/src/logs/app.log' if os.environ.get('FLASK_ENV') == 'production' else 'logs/app.log',
+    '/opt/render/project/src/logs/app.log',
     maxBytes=10240,
     backupCount=10
 )
@@ -39,15 +40,18 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
-    # تنظیمات پورت برای Render.com
-    port = int(os.environ.get('PORT', 10000))  
+    # ✅ تنظیمات پورت و هاست برای Render.com
+    port = int(os.environ.get('PORT', 10000))  # پورت پیش‌فرض Render.com
+    host = '0.0.0.0'  # باید 0.0.0.0 باشد برای Render.com
     
-   
-    host = '0.0.0.0'
+    # ✅ تنظیمات ویژه برای Render.com
+    if os.environ.get('FLASK_ENV') == 'production':
+        app.config['SESSION_FILE_DIR'] = '/opt/render/project/src/sessions'
+        app.config['STATIC_FOLDER'] = '/opt/render/project/src/app/static'
     
-    # پیام راه‌اندازی
+    # ✅ پیام راه‌اندازی
     app.logger.info(f"Starting application in {app.config.get('FLASK_ENV', 'production')} mode")
     app.logger.info(f"Listening on {host}:{port}")
     
-    # راه‌اندازی
+    # ✅ راه‌اندازی
     app.run(host=host, port=port, debug=False)
