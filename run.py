@@ -4,7 +4,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import signal
 import sys
-from urllib.parse import url_parse
+from urllib.parse import urlparse
 
 # تنظیم لاگینگ
 if not os.path.exists('/opt/render/project/src/logs'):
