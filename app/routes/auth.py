@@ -1,16 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash  # ✅ ایمپورت صحیح
 from app.models import db, User
 from app.decorators import is_account_locked, record_failed_attempt, clear_failed_attempts
 from app.utils.sms_service import sms_service
 from app.utils.audit_log import log_audit_action
 import logging
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 bp = Blueprint('auth', __name__)
@@ -76,7 +76,7 @@ def login():
             minutes = int(remaining_time // 60)
             seconds = int(remaining_time % 60)
             flash(f'حساب شما به دلیل تلاش‌های ناموفق متوالی قفل شده است. لطفاً پس از {minutes} دقیقه و {seconds} ثانیه دوباره تلاش کنید.', 'danger')
-            current_app.logger.warning(f"Login attempt on locked account: {username}")
+            logger.warning(f"Login attempt on locked account: {username}")
             return render_template('auth/login.html', form=form)
         
         user = None
@@ -84,7 +84,7 @@ def login():
         # Check Super Admin
         from config import Config
         if username == Config.SUPER_ADMIN_USERNAME:
-            from werkzeug.security import check_password_hash
+            # ✅ اصلاح خطای ایمپورت - استفاده صحیح از generate_password_hash
             if check_password_hash(generate_password_hash(Config.SUPER_ADMIN_PASSWORD), password):
                 # Create mock user object for Super Admin
                 user = User(
@@ -94,14 +94,14 @@ def login():
                     role='super_admin',
                     is_active=True
                 )
-                current_app.logger.info(f"Super Admin {username} logged in successfully")
+                logger.info(f"Super Admin {username} logged in successfully")
         
         # Check regular users
         if not user:
             user = User.query.filter_by(username=username).first()
             
             if user and user.check_password(password):
-                current_app.logger.info(f"User {username} logged in successfully")
+                logger.info(f"User {username} logged in successfully")
             else:
                 user = None
         
@@ -111,7 +111,7 @@ def login():
             login_user(user, remember=form.remember.data, duration=timedelta(days=30))
             
             flash(f'خوشحالم که دوباره اینجا هستم، {user.name}!', 'success')
-            current_app.logger.info(f"User {username} logged in successfully. Session ID: {session.sid}")
+            logger.info(f"User {username} logged in successfully. Session ID: {session.sid}")
             
             # Log audit action
             log_audit_action(
@@ -121,7 +121,7 @@ def login():
                 school_id=user.school_id if hasattr(user, 'school_id') else None
             )
             
-            #  ریدایرکت صحیح پس از لاگین
+            # Redirect to next page or dashboard
             next_page = request.args.get('next')
             if not next_page or url_parse(next_page).netloc != '':
                 if user.is_super_admin:
@@ -133,16 +133,15 @@ def login():
                 else:
                     next_page = url_for('auth.index')
             
-            current_app.logger.info(f"Redirecting to: {next_page}")
+            logger.info(f"Redirecting to: {next_page}")
             return redirect(next_page)
         
         # Failed login
         record_failed_attempt(username)
         flash('نام کاربری یا رمز عبور اشتباه است', 'danger')
-        current_app.logger.warning(f"Failed login attempt for username: {username}")
+        logger.warning(f"Failed login attempt for username: {username}")
     
     return render_template('auth/login.html', form=form)
-
 
 @bp.route('/logout')
 @login_required
@@ -208,7 +207,7 @@ def reset_password(token):
     form = PasswordResetForm()
     
     if form.validate_on_submit():
-        if form.new_password.data != form.confirm_password:
+        if form.new_password.data != form.confirm_password.data:
             flash('رمز عبور‌ها مطابقت ندارند', 'danger')
             return render_template('auth/reset_password.html', form=form, token=token)
         
