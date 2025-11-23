@@ -2,41 +2,55 @@ services:
   - type: web
     name: school-management
     env: python
-    region: frankfurt # منطقه اروپا برای کاربران ایرانی
+    region: frankfurt
     plan: starter
     rootDir: /
     buildCommand: |
-      echo "🚀 Starting secure build process..."
+      echo " Starting build process for School Management System"
+      echo " Creating necessary directories..."
+      
+      # ایجاد پوشه‌های ضروری
+      mkdir -p /opt/render/project/src/app/static/css
+      mkdir -p /opt/render/project/src/app/static/js
+      mkdir -p /opt/render/project/src/app/static/images
+      mkdir -p /opt/render/project/src/app/static/fonts
+      mkdir -p /opt/render/project/src/sessions
+      mkdir -p /opt/render/project/src/logs
+      mkdir -p /opt/render/project/src/uploads/avatars
+      mkdir -p /opt/render/project/src/uploads/documents
+      mkdir -p /opt/render/project/src/databases
+      
+      echo " Installing dependencies..."
       pip install -r requirements.txt
-      echo "✅ Dependencies installed"
+      
+      echo " Running database migrations..."
       flask db upgrade
-      echo "✅ Database migrated"
-    startCommand: "gunicorn --worker-class gevent --workers 3 --timeout 60 --bind 0.0.0.0:$PORT run:app"
+      
+      echo " Build completed successfully!"
+    startCommand: "gunicorn --worker-class gevent --workers 3 --timeout 120 --bind 0.0.0.0:$PORT run:app"
     envVars:
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
-        generateValue: true # render.com یک کلید تصادفی امن تولید می‌کند
+        generateValue: true
       - key: SUPER_ADMIN_USERNAME
-        sync: false # باید دستی تنظیم شود
+        value: ""  # باید در Render Dashboard تنظیم شود
       - key: SUPER_ADMIN_PASSWORD
-        generateValue: true # render.com یک رمز عبور قوی تولید می‌کند
+        generateValue: true
       - key: DATABASE_URL
         fromDatabase:
           name: school-db
           property: connectionString
-      - key: SMS_ACTIVE
-        value: "False"
-      - key: MAIL_USE_TLS
-        value: "True"
-    healthCheckPath: /health
-    healthCheckInterval: 60
-    autoDeploy: true
-
+      - key: SESSION_FILE_DIR
+        value: /opt/render/project/src/sessions
+      - key: PORT
+        value: "10000"  # پورت پیش‌فرض Render.com
+    
 databases:
   - name: school-db
     databaseName: school_management
     user: school_user
     plan: starter
     ipAllowList:
-      - source: 0.0.0.0/0 # فقط برای توسعه - در production محدود کنید
+      - source: 0.0.0.0/0
+        description: Allow all IPs (for development only - restrict in production)
