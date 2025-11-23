@@ -4,37 +4,53 @@ from app.extensions import db, migrate, login_manager, mail, csrf
 from app.models import init_database, User
 import logging
 import os
-from datetime import datetime  # ✅ ایمپورت datetime در سطح ماژول
-import jdatetime  # برای تاریخ شمسی
+from datetime import datetime
+import jdatetime
+
+def register_template_filters(app):
+    """Register custom template filters"""
+    @app.template_filter('format_datetime')
+    def format_datetime_filter(dt):
+        """Format a datetime object for display in templates"""
+        if not dt:
+            return ''
+        return dt.strftime('%Y/%m/%d %H:%M:%S')
+    
+    @app.template_filter('format_date')
+    def format_date_filter(dt):
+        """Format a date object for display in templates"""
+        if not dt:
+            return ''
+        return dt.strftime('%Y/%m/%d')
+    
+    @app.template_filter('format_persian_date')
+    def format_persian_date_filter(dt):
+        """Format a date object as Persian date"""
+        if not dt:
+            return ''
+        return jdatetime.date.fromgregorian(date=dt).strftime('%Y/%m/%d')
 
 def register_context_processors(app):
     """Register custom context processors for templates"""
     @app.context_processor
     def utility_processor():
         """Custom template context containing useful functions and variables"""
-        # ✅ datetime را در اینجا استفاده کنید
         return dict(
             now=datetime.now,
             current_year=datetime.now().year,
-            format_datetime=lambda dt: dt.strftime('%Y/%m/%d %H:%M:%S') if dt else '',
-            format_date=lambda dt: dt.strftime('%Y/%m/%d') if dt else '',
-            format_persian_date=lambda dt: jdatetime.date.fromgregorian(date=dt).strftime('%Y/%m/%d') if dt else '',
-            # ✅ مسیر استاتیک برای Render.com
             static_url=lambda filename: url_for('static', filename=filename, _external=True),
-            datetime=datetime,  # ✅ اضافه کردن datetime به context
+            datetime=datetime,
             session=session
         )
 
 def create_app(config_class=Config):
     """Factory function to create Flask application"""
-    # ✅ تنظیمات صحیح برای فایل‌های استاتیک در Render.com
     app = Flask(__name__, 
-                static_folder='static',  # مسیر نسبت به app/
+                static_folder='static',
                 static_url_path='/static')
     
     app.config.from_object(config_class)
     
-    # ✅ تنظیمات ویژه برای Render.com
     if os.environ.get('FLASK_ENV') == 'production':
         app.config['STATIC_FOLDER'] = '/opt/render/project/src/app/static'
         app.config['SESSION_FILE_DIR'] = '/opt/render/project/src/sessions'
@@ -52,6 +68,12 @@ def create_app(config_class=Config):
     login_manager.login_message_category = "info"
     login_manager.session_protection = "strong"
     
+    # Register template filters
+    register_template_filters(app)
+    
+    # Register context processors
+    register_context_processors(app)
+    
     # Set up logging
     setup_logging(app)
     
@@ -67,9 +89,6 @@ def create_app(config_class=Config):
     
     # Register shell context
     register_shell_context(app)
-    
-    # Register context processors
-    register_context_processors(app)
     
     return app
 
