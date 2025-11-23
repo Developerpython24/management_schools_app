@@ -76,7 +76,7 @@ def login():
             minutes = int(remaining_time // 60)
             seconds = int(remaining_time % 60)
             flash(f'حساب شما به دلیل تلاش‌های ناموفق متوالی قفل شده است. لطفاً پس از {minutes} دقیقه و {seconds} ثانیه دوباره تلاش کنید.', 'danger')
-            logger.warning(f"Login attempt on locked account: {username}")
+            current_app.logger.warning(f"Login attempt on locked account: {username}")
             return render_template('auth/login.html', form=form)
         
         user = None
@@ -85,7 +85,7 @@ def login():
         from config import Config
         if username == Config.SUPER_ADMIN_USERNAME:
             from werkzeug.security import check_password_hash
-            if check_password_hash(Config.SUPER_ADMIN_PASSWORD, password):
+            if check_password_hash(generate_password_hash(Config.SUPER_ADMIN_PASSWORD), password):
                 # Create mock user object for Super Admin
                 user = User(
                     id=0,
@@ -94,24 +94,24 @@ def login():
                     role='super_admin',
                     is_active=True
                 )
-                logger.info(f"Super Admin {username} logged in successfully")
+                current_app.logger.info(f"Super Admin {username} logged in successfully")
         
         # Check regular users
         if not user:
             user = User.query.filter_by(username=username).first()
             
-            if user and not user.is_super_admin and user.check_password(password):
-                logger.info(f"User {username} logged in successfully")
+            if user and user.check_password(password):
+                current_app.logger.info(f"User {username} logged in successfully")
             else:
                 user = None
         
         # Successful login
         if user:
             clear_failed_attempts(username)
-            login_user(user, remember=form.remember.data, duration=timedelta(days=30) if form.remember.data else None)
+            login_user(user, remember=form.remember.data, duration=timedelta(days=30))
             
             flash(f'خوشحالم که دوباره اینجا هستم، {user.name}!', 'success')
-            logger.info(f"User {username} logged in successfully")
+            current_app.logger.info(f"User {username} logged in successfully. Session ID: {session.sid}")
             
             # Log audit action
             log_audit_action(
@@ -121,24 +121,28 @@ def login():
                 school_id=user.school_id if hasattr(user, 'school_id') else None
             )
             
-            # Redirect to next page or dashboard
+            #  ریدایرکت صحیح پس از لاگین
             next_page = request.args.get('next')
-            if next_page:
-                return redirect(next_page)
+            if not next_page or url_parse(next_page).netloc != '':
+                if user.is_super_admin:
+                    next_page = url_for('super_admin.dashboard')
+                elif user.is_school_admin:
+                    next_page = url_for('school_admin.dashboard')
+                elif user.is_teacher:
+                    next_page = url_for('teacher.dashboard')
+                else:
+                    next_page = url_for('auth.index')
             
-            if user.is_super_admin:
-                return redirect(url_for('super_admin.dashboard'))
-            elif user.is_school_admin:
-                return redirect(url_for('school_admin.dashboard'))
-            elif user.is_teacher:
-                return redirect(url_for('teacher.dashboard'))
+            current_app.logger.info(f"Redirecting to: {next_page}")
+            return redirect(next_page)
         
         # Failed login
         record_failed_attempt(username)
         flash('نام کاربری یا رمز عبور اشتباه است', 'danger')
-        logger.warning(f"Failed login attempt for username: {username}")
+        current_app.logger.warning(f"Failed login attempt for username: {username}")
     
     return render_template('auth/login.html', form=form)
+
 
 @bp.route('/logout')
 @login_required
