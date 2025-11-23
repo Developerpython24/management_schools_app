@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
-from werkzeug.security import generate_password_hash, check_password_hash  # ✅ ایمپورت صحیح
+from werkzeug.security import generate_password_hash, check_password_hash  
 from app.models import db, User
 from app.decorators import is_account_locked, record_failed_attempt, clear_failed_attempts
 from app.utils.sms_service import sms_service
@@ -81,7 +81,7 @@ def login():
         
         user = None
         
-        # ✅ اصلاح Super Admin - استفاده از مقدار واقعی از Config
+        #  اصلاح Super Admin - استفاده از مقدار واقعی از Config
         from config import Config
         if username == Config.SUPER_ADMIN_USERNAME:
             # بررسی رمز عبور Super Admin
@@ -94,7 +94,7 @@ def login():
                     role='super_admin',
                     is_active=True
                 )
-                user.set_id = lambda: str(0)  # ✅ تنظیم موقت get_id برای Super Admin
+                user.set_id = lambda: str(0)  #  تنظیم موقت get_id برای Super Admin
                 logger.info(f"Super Admin {username} logged in successfully")
         
         # Check regular users
