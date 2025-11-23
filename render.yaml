@@ -6,27 +6,165 @@ services:
     plan: starter
     rootDir: /
     buildCommand: |
-      echo " Starting build process for School Management System"
-      echo " Creating necessary directories..."
+      echo "🚀 Starting build process for School Management System"
+      echo "✅ Creating necessary directories..."
       
-      # ایجاد پوشه‌های ضروری
-      mkdir -p /opt/render/project/src/app/static/css
-      mkdir -p /opt/render/project/src/app/static/js
-      mkdir -p /opt/render/project/src/app/static/images
-      mkdir -p /opt/render/project/src/app/static/fonts
+      # ✅ ایجاد پوشه‌های ضروری برای Render.com
       mkdir -p /opt/render/project/src/sessions
-      mkdir -p /opt/render/project/src/logs
-      mkdir -p /opt/render/project/src/uploads/avatars
-      mkdir -p /opt/render/project/src/uploads/documents
       mkdir -p /opt/render/project/src/databases
+      mkdir -p /opt/render/project/src/uploads
+      mkdir -p /opt/render/project/src/logs
+      mkdir -p app/static/css
+      mkdir -p app/static/images
+      mkdir -p app/static/fonts
       
-      echo " Installing dependencies..."
+      # ✅ ایجاد فایل CSS اصلی
+      cat > app/static/css/main.css << 'EOF'
+      body {
+          font-family: 'Vazirmatn', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0;
+          padding: 0;
+          background-color: #f8f9fa;
+          color: #495057;
+          line-height: 1.6;
+      }
+      .container {
+          width: 100%;
+          padding-right: 15px;
+          padding-left: 15px;
+          margin-right: auto;
+          margin-left: auto;
+      }
+      @media (min-width: 576px) {
+          .container {
+              max-width: 540px;
+          }
+      }
+      @media (min-width: 768px) {
+          .container {
+              max-width: 720px;
+          }
+      }
+      @media (min-width: 992px) {
+          .container {
+              max-width: 960px;
+          }
+      }
+      @media (min-width: 1200px) {
+          .container {
+              max-width: 1140px;
+          }
+      }
+      .btn {
+          display: inline-block;
+          font-weight: 400;
+          text-align: center;
+          white-space: nowrap;
+          vertical-align: middle;
+          user-select: none;
+          border: 1px solid transparent;
+          padding: 0.375rem 0.75rem;
+          font-size: 1rem;
+          line-height: 1.5;
+          border-radius: 0.25rem;
+          transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+      .btn-primary {
+          color: #fff;
+          background-color: #0d6efd;
+          border-color: #0d6efd;
+      }
+      .btn-primary:hover {
+          color: #fff;
+          background-color: #0b5ed7;
+          border-color: #0a58ca;
+      }
+      .form-control {
+          display: block;
+          width: 100%;
+          padding: 0.375rem 0.75rem;
+          font-size: 1rem;
+          font-weight: 400;
+          line-height: 1.5;
+          color: #212529;
+          background-color: #fff;
+          background-clip: padding-box;
+          border: 1px solid #ced4da;
+          border-radius: 0.25rem;
+          transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+      .form-control:focus {
+          color: #212529;
+          background-color: #fff;
+          border-color: #86b7fe;
+          outline: 0;
+          box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+      }
+      .card {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          word-wrap: break-word;
+          background-color: #fff;
+          background-clip: border-box;
+          border: 1px solid rgba(0, 0, 0, 0.125);
+          border-radius: 0.25rem;
+      }
+      .card-body {
+          flex: 1 1 auto;
+          padding: 1rem 1rem;
+      }
+      .alert {
+          position: relative;
+          padding: 0.75rem 1.25rem;
+          margin-bottom: 1rem;
+          border: 1px solid transparent;
+          border-radius: 0.25rem;
+      }
+      .alert-success {
+          color: #155724;
+          background-color: #d4edda;
+          border-color: #c3e6cb;
+      }
+      .alert-danger {
+          color: #721c24;
+          background-color: #f8d7da;
+          border-color: #f5c6cb;
+      }
+      .footer {
+          background-color: #212529;
+          color: rgba(255, 255, 255, 0.7);
+          padding: 1rem 0;
+          margin-top: auto;
+      }
+      @media (max-width: 768px) {
+          body {
+              padding-top: 56px;
+          }
+      }
+      .school-header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 2rem 0;
+          text-align: center;
+      }
+      .login-container {
+          max-width: 500px;
+          margin: 2rem auto;
+      }
+      EOF
+      
+      # ✅ ایجاد favicon.ico معتبر
+      echo "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAFVBMVEX///8AAAD///8AAAD///8AAAD///9t52NFAAAAB3RSTlMAERAZmZn7VQO2PAAAAHhJREFUGNNjYGBgZGJmYWFhZWVj5+Dk4uHlFxQSFhYRlVJQUlZRVVPX0NTS1tHTNzA0MjYxtbK2sbWzd3B0cnZxdXP38PTy9vH18w8IDAoOCQ0Lj4iMio5hYIwBADuZJgFzJg7/AAAAAElFTkSuQmCC" | base64 -d > app/static/favicon.ico
+      
+      echo "✅ Installing dependencies..."
       pip install -r requirements.txt
       
-      echo " Running database migrations..."
+      echo "✅ Running database migrations..."
       flask db upgrade
       
-      echo " Build completed successfully!"
+      echo "✅ Build completed successfully!"
     startCommand: "gunicorn --worker-class gevent --workers 3 --timeout 120 --bind 0.0.0.0:$PORT run:app"
     envVars:
       - key: FLASK_ENV
@@ -34,7 +172,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: SUPER_ADMIN_USERNAME
-        value: ""  # باید در Render Dashboard تنظیم شود
+        sync: false
       - key: SUPER_ADMIN_PASSWORD
         generateValue: true
       - key: DATABASE_URL
@@ -44,13 +182,10 @@ services:
       - key: SESSION_FILE_DIR
         value: /opt/render/project/src/sessions
       - key: PORT
-        value: "10000"  # پورت پیش‌فرض Render.com
+        value: "10000"
     
 databases:
   - name: school-db
     databaseName: school_management
     user: school_user
     plan: starter
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: Allow all IPs (for development only - restrict in production)
