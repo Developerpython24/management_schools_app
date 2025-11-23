@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="سیستم مدیریت یکپارچه مدرسه">
-    <meta name="author" content="توسعه‌دهنده سیستم">
+    <meta name="description" content="سیستم مدیریت مدرسه">
     <title>{% block title %}سیستم مدیریت مدرسه{% endblock %}</title>
     
-    <!-- فونت فارسی Vazirmatn -->
+    <!-- فونت فارسی -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
     
     <!-- بوت‌استرپ 5 -->
@@ -16,11 +15,12 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Chart.js -->
-    <link href="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.css" rel="stylesheet">
+    <!-- CSS اصلی -->
+    <link href="{{ static_url('css/main.css') }}" rel="stylesheet">
     
-    <!-- CSS سفارشی -->
-    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <!-- ✅ favicon.ico - این بار از فایل واقعی استفاده می‌کنیم -->
+    <link rel="icon" href="{{ static_url('favicon.ico') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ static_url('favicon.ico') }}" type="image/x-icon">
     
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -28,27 +28,23 @@
     {% block head %}{% endblock %}
 </head>
 <body class="{% if current_user.is_authenticated %}role-{{ current_user.role }}{% endif %}">
+    <!-- محتوای اصلی صفحه -->
     <div class="app-container">
-        <!-- نوار کناری -->
         {% if current_user.is_authenticated %}
             {% include 'partials/sidebar.html' %}
         {% endif %}
         
-        <!-- محتوای اصلی -->
         <main class="main-content {% if current_user.is_authenticated and session.get('sidebar_collapsed') %}sidebar-collapsed{% endif %}">
-            <!-- نوار بالا -->
             {% if current_user.is_authenticated %}
                 {% include 'partials/navbar.html' %}
             {% endif %}
             
-            <!-- محتوای صفحه -->
             <div class="container-fluid py-3">
                 {% include 'partials/flash_messages.html' %}
                 
                 {% block content %}{% endblock %}
             </div>
             
-            <!-- فوتر -->
             {% include 'partials/footer.html' %}
         </main>
     </div>
@@ -56,7 +52,6 @@
     <!-- اسکریپت‌ها -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -88,65 +83,6 @@
                 });
             }
             
-            // Close dropdowns on mobile when clicking outside
-            document.addEventListener('click', function(e) {
-                if (window.innerWidth < 768) {
-                    const dropdowns = document.querySelectorAll('.dropdown-menu.show');
-                    dropdowns.forEach(dropdown => {
-                        if (!dropdown.closest('.dropdown').contains(e.target)) {
-                            dropdown.classList.remove('show');
-                        }
-                    });
-                }
-            });
-            
-            // Loading states for buttons
-            document.querySelectorAll('button[type="submit"], .btn-loading').forEach(button => {
-                button.addEventListener('click', function() {
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> در حال پردازش...';
-                    this.disabled = true;
-                    
-                    // برای بازگشت به حالت اولیه در صورت نیاز
-                    setTimeout(() => {
-                        if (this.disabled) {
-                            this.innerHTML = originalText;
-                            this.disabled = false;
-                        }
-                    }, 5000);
-                });
-            });
-            
-            // Confirmation dialogs
-            document.querySelectorAll('[data-confirm]').forEach(element => {
-                element.addEventListener('click', function(e) {
-                    const message = this.getAttribute('data-confirm') || 'آیا مطمئن هستید؟';
-                    if (!confirm(message)) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                });
-            });
-            
-            // Toggle password visibility
-            document.querySelectorAll('.toggle-password').forEach(element => {
-                element.addEventListener('click', function() {
-                    const targetSelector = this.getAttribute('data-target');
-                    const input = document.querySelector(targetSelector);
-                    const icon = this.querySelector('i');
-                    
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        icon.classList.remove('fa-eye');
-                        icon.classList.add('fa-eye-slash');
-                    } else {
-                        input.type = 'password';
-                        icon.classList.remove('fa-eye-slash');
-                        icon.classList.add('fa-eye');
-                    }
-                });
-            });
-            
             // Real-time clock for footer
             function updateClock() {
                 const now = new Date();
@@ -160,22 +96,6 @@
             
             setInterval(updateClock, 1000);
             updateClock();
-            
-            // Form validation
-            (function() {
-                'use strict'
-                const forms = document.querySelectorAll('.needs-validation')
-                Array.prototype.slice.call(forms)
-                    .forEach(function(form) {
-                        form.addEventListener('submit', function(event) {
-                            if (!form.checkValidity()) {
-                                event.preventDefault()
-                                event.stopPropagation()
-                            }
-                            form.classList.add('was-validated')
-                        }, false)
-                    })
-            })();
         });
     </script>
     
