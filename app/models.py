@@ -40,7 +40,9 @@ class School(db.Model):
     def __repr__(self):
         return f'<School {self.name}>'
 
-class User(db.Model):
+from flask_login import UserMixin  # ✅ ایمپورت UserMixin
+
+class User(db.Model, UserMixin):  # ✅ ارث‌بری از UserMixin
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -53,8 +55,8 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    last_login = db.Column(db.DateTime)
     
-    # For school admins and teachers
     school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=True)
     
     # Relationships
@@ -68,6 +70,8 @@ class User(db.Model):
     
     def set_password(self, password):
         """Hash and set password"""
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
         self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
@@ -85,6 +89,11 @@ class User(db.Model):
     @property
     def is_teacher(self):
         return self.role == 'teacher'
+    
+    #  تابع get_id برای Flask-Login
+    def get_id(self):
+        """Return the user ID as a string for Flask-Login"""
+        return str(self.id)
     
     def __repr__(self):
         return f'<User {self.username} ({self.role})>'
