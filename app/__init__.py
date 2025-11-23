@@ -1,35 +1,40 @@
-from flask import Flask, current_app, url_for
+from flask import Flask, current_app, url_for, session
 from config import Config
 from app.extensions import db, migrate, login_manager, mail, csrf
 from app.models import init_database, User
 import logging
 import os
-from datetime import datetime
-import jdatetime
+from datetime import datetime  # ✅ ایمپورت datetime در سطح ماژول
+import jdatetime  # برای تاریخ شمسی
 
 def register_context_processors(app):
     """Register custom context processors for templates"""
     @app.context_processor
     def utility_processor():
         """Custom template context containing useful functions and variables"""
+        # ✅ datetime را در اینجا استفاده کنید
         return dict(
             now=datetime.now,
             current_year=datetime.now().year,
             format_datetime=lambda dt: dt.strftime('%Y/%m/%d %H:%M:%S') if dt else '',
             format_date=lambda dt: dt.strftime('%Y/%m/%d') if dt else '',
             format_persian_date=lambda dt: jdatetime.date.fromgregorian(date=dt).strftime('%Y/%m/%d') if dt else '',
-            static_url=lambda filename: url_for('static', filename=filename, _external=True)
+            # ✅ مسیر استاتیک برای Render.com
+            static_url=lambda filename: url_for('static', filename=filename, _external=True),
+            datetime=datetime,  # ✅ اضافه کردن datetime به context
+            session=session
         )
 
 def create_app(config_class=Config):
     """Factory function to create Flask application"""
+    # ✅ تنظیمات صحیح برای فایل‌های استاتیک در Render.com
     app = Flask(__name__, 
-                static_folder='static',
+                static_folder='static',  # مسیر نسبت به app/
                 static_url_path='/static')
     
     app.config.from_object(config_class)
     
-    # تنظیمات ویژه برای Render.com
+    # ✅ تنظیمات ویژه برای Render.com
     if os.environ.get('FLASK_ENV') == 'production':
         app.config['STATIC_FOLDER'] = '/opt/render/project/src/app/static'
         app.config['SESSION_FILE_DIR'] = '/opt/render/project/src/sessions'
@@ -74,7 +79,7 @@ def setup_logging(app):
         level=logging.DEBUG if app.debug else logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]',
         handlers=[
-            logging.FileHandler("app.log"),
+            logging.FileHandler("/opt/render/project/src/app.log" if os.environ.get('FLASK_ENV') == 'production' else "app.log"),
             logging.StreamHandler()
         ]
     )
@@ -88,7 +93,7 @@ def setup_security(app):
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-XSS-Protection'] = '1; mode=block'
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self'  https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net"
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net"
         return response
 
 def register_blueprints(app):
