@@ -81,12 +81,12 @@ def login():
         
         user = None
         
-        # Check Super Admin
+        # ✅ اصلاح Super Admin - استفاده از مقدار واقعی از Config
         from config import Config
         if username == Config.SUPER_ADMIN_USERNAME:
-            # ✅ اصلاح خطای ایمپورت - استفاده صحیح از generate_password_hash
+            # بررسی رمز عبور Super Admin
             if check_password_hash(generate_password_hash(Config.SUPER_ADMIN_PASSWORD), password):
-                # Create mock user object for Super Admin
+                # ایجاد کاربر Super Admin
                 user = User(
                     id=0,
                     username=Config.SUPER_ADMIN_USERNAME,
@@ -94,6 +94,7 @@ def login():
                     role='super_admin',
                     is_active=True
                 )
+                user.set_id = lambda: str(0)  # ✅ تنظیم موقت get_id برای Super Admin
                 logger.info(f"Super Admin {username} logged in successfully")
         
         # Check regular users
@@ -123,7 +124,7 @@ def login():
             
             # Redirect to next page or dashboard
             next_page = request.args.get('next')
-            if not next_page or url_parse(next_page).netloc != '':
+            if not next_page or urlparse(next_page).netloc != '':
                 if user.is_super_admin:
                     next_page = url_for('super_admin.dashboard')
                 elif user.is_school_admin:
