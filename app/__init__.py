@@ -1,9 +1,11 @@
-from flask import Flask, current_app
+from flask import Flask, current_app, url_for
 from config import Config
 from app.extensions import db, migrate, login_manager, mail, csrf
 from app.models import init_database, User
 import logging
+import os
 from datetime import datetime
+import jdatetime
 
 def register_context_processors(app):
     """Register custom context processors for templates"""
@@ -15,12 +17,22 @@ def register_context_processors(app):
             current_year=datetime.now().year,
             format_datetime=lambda dt: dt.strftime('%Y/%m/%d %H:%M:%S') if dt else '',
             format_date=lambda dt: dt.strftime('%Y/%m/%d') if dt else '',
-            format_persian_date=lambda dt: jdatetime.date.fromgregorian(date=dt).strftime('%Y/%m/%d') if dt else ''
+            format_persian_date=lambda dt: jdatetime.date.fromgregorian(date=dt).strftime('%Y/%m/%d') if dt else '',
+            static_url=lambda filename: url_for('static', filename=filename, _external=True)
         )
+
 def create_app(config_class=Config):
     """Factory function to create Flask application"""
-    app = Flask(__name__)
+    app = Flask(__name__, 
+                static_folder='static',
+                static_url_path='/static')
+    
     app.config.from_object(config_class)
+    
+    # تنظیمات ویژه برای Render.com
+    if os.environ.get('FLASK_ENV') == 'production':
+        app.config['STATIC_FOLDER'] = '/opt/render/project/src/app/static'
+        app.config['SESSION_FILE_DIR'] = '/opt/render/project/src/sessions'
     
     # Initialize extensions
     db.init_app(app)
@@ -50,8 +62,10 @@ def create_app(config_class=Config):
     
     # Register shell context
     register_shell_context(app)
+    
     # Register context processors
     register_context_processors(app)
+    
     return app
 
 def setup_logging(app):
