@@ -4,6 +4,7 @@ from datetime import datetime, date
 import logging
 from app import db
 from config import Config
+from flask_login import UserMixin  
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,6 @@ class School(db.Model):
     def __repr__(self):
         return f'<School {self.name}>'
 
-from flask_login import UserMixin  # ✅ ایمپورت UserMixin
 
 class User(db.Model, UserMixin):  # ✅ ارث‌بری از UserMixin
     __tablename__ = 'users'
