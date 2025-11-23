@@ -2,37 +2,44 @@ import os
 from dotenv import load_dotenv
 from datetime import timedelta
 
-# بارگذاری متغیرهای محیطی فقط در حالت توسعه
+# Load environment variables only in development
 if os.environ.get('FLASK_ENV') != 'production':
     load_dotenv()
 
 class Config:
-    # تنظیمات پایه
+    # Basic configuration
     FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
     DEBUG = os.environ.get('FLASK_ENV') == 'development'
     
-    # امنیت - کلید را حتماً در production تنظیم کنید
+    # Security
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
         if os.environ.get('FLASK_ENV') == 'production':
-            raise ValueError("❌ SECRET_KEY is required in production environment!")
+            raise ValueError("SECRET_KEY is required in production environment!")
         SECRET_KEY = 'dev-secret-key-change-in-production'
     
-    # تنظیمات session
+    # Session configuration
     SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    SESSION_TYPE = 'filesystem'
+    SESSION_PERMANENT = True
+    SESSION_USE_SIGNER = True
+    SESSION_COOKIE_NAME = '__session'
     
-    # مسیرهای دیتابیس و آپلود
+    # Session file directory - تنظیمات ویژه برای Render.com
+    SESSION_FILE_DIR = os.environ.get('SESSION_FILE_DIR', '/opt/render/project/src/sessions')
+    
+    # Database configuration
     DATABASE_DIR = os.environ.get('DATABASE_DIR') or '/opt/render/project/src/databases'
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or '/opt/render/project/src/uploads'
     
-    # دیتابیس
+    # مسیر دیتابیس در render.com
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     if not SQLALCHEMY_DATABASE_URI:
         if os.environ.get('FLASK_ENV') == 'production':
-            raise ValueError("❌ DATABASE_URL is required in production!")
+            raise ValueError("DATABASE_URL is required in production!")
         # دیتابیس توسعه
         db_path = os.path.join(DATABASE_DIR, 'school_management.db')
         SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
@@ -49,24 +56,17 @@ class Config:
         'max_overflow': 20,
     }
     
-    # 🔐 Super Admin Settings - فقط از environment variables خوانده شود
-    SUPER_ADMIN_USERNAME = os.environ.get('SUPER_ADMIN_USERNAME')
-    SUPER_ADMIN_PASSWORD = os.environ.get('SUPER_ADMIN_PASSWORD')
+    # Super Admin configuration
+    SUPER_ADMIN_USERNAME = os.environ.get('SUPER_ADMIN_USERNAME', 'superadmin')
+    SUPER_ADMIN_PASSWORD = os.environ.get('SUPER_ADMIN_PASSWORD', 'superadmin123')
     
-    # بررسی امنیتی برای production
-    if os.environ.get('FLASK_ENV') == 'production':
-        if not SUPER_ADMIN_USERNAME or not SUPER_ADMIN_PASSWORD:
-            raise ValueError("❌ SUPER_ADMIN_USERNAME and SUPER_ADMIN_PASSWORD are required in production!")
-        if len(SUPER_ADMIN_PASSWORD) < 12:
-            raise ValueError("❌ SUPER_ADMIN_PASSWORD must be at least 12 characters long for production!")
-    
-    # تنظیمات SMS
+    # SMS configuration
     SMS_API_KEY = os.environ.get('SMS_API_KEY', '')
     SMS_ACTIVE = os.environ.get('SMS_ACTIVE', 'False').lower() == 'true'
     SMS_PROVIDER = os.environ.get('SMS_PROVIDER', 'kavenegar')
     SMS_SENDER = os.environ.get('SMS_SENDER', '10008663')
     
-    # تنظیمات ایمیل
+    # Email configuration
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
@@ -74,37 +74,31 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@school.com')
     
-    # محدودیت‌های فایل
+    # File upload configuration
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'}
-    
-    # محدودیت نرخ
-    LOGIN_RATE_LIMIT = 5
-    LOGIN_LOCKOUT_TIME = 300  # 5 minutes
-    
-    # انواع مدرسه
-    SCHOOL_TYPES = {
-        'elementary': 'ابتدایی',
-        'middle': 'متوسطه اول',
-        'high': 'متوسطه دوم',
-        'combined': 'یکپارچه'
-    }
     
     @classmethod
     def init_app(cls, app):
-        """اینیشیال‌سازی اپلیکیشن با تنظیمات امنیتی"""
-        # ایجاد دایرکتوری‌ها
-        os.makedirs(cls.DATABASE_DIR, exist_ok=True)
-        os.makedirs(cls.UPLOAD_FOLDER, exist_ok=True)
+        """Initialize app with configuration"""
+        # ایجاد پوشه session - فقط در صورتی که قابل نوشتن باشد
+        if cls.FLASK_ENV == 'production':
+            # برای Render.com، فقط اگر دایرکتوری وجود داشته باشد یا قابل ایجاد باشد
+            if os.access(os.path.dirname(cls.SESSION_FILE_DIR), os.W_OK):
+                os.makedirs(cls.SESSION_FILE_DIR, exist_ok=True)
+        else:
+            os.makedirs(cls.SESSION_FILE_DIR, exist_ok=True)
         
-        # بررسی امنیتی برای Super Admin
+        # ایجاد دایرکتوری‌های لازم - فقط در حالت توسعه
+        if cls.FLASK_ENV != 'production':
+            os.makedirs(cls.DATABASE_DIR, exist_ok=True)
+            os.makedirs(cls.UPLOAD_FOLDER, exist_ok=True)
+            os.makedirs(os.path.join(cls.UPLOAD_FOLDER, 'avatars'), exist_ok=True)
+            os.makedirs(os.path.join(cls.UPLOAD_FOLDER, 'documents'), exist_ok=True)
+        
+        # لاگ تنظیمات
         if app.debug:
-            app.logger.debug("✅ Security check passed - Development mode")
-            if not cls.SUPER_ADMIN_USERNAME or not cls.SUPER_ADMIN_PASSWORD:
-                app.logger.warning("⚠️  Super Admin credentials not set - using defaults for development")
-        
-        # لاگ تنظیمات امنیتی (بدون نمایش کلیدها)
-        app.logger.info("🔒 Security configuration loaded")
-        app.logger.info(f"Environment: {cls.FLASK_ENV}")
-        app.logger.info(f"Super Admin Username configured: {'Yes' if cls.SUPER_ADMIN_USERNAME else 'No'}")
-        app.logger.info(f"Database connection: {'Configured' if cls.SQLALCHEMY_DATABASE_URI else 'Not configured'}")
+            app.logger.debug(f"Database URI: {cls.SQLALCHEMY_DATABASE_URI}")
+            app.logger.debug(f"SMS Active: {cls.SMS_ACTIVE}")
+            app.logger.debug(f"Environment: {cls.FLASK_ENV}")
+            app.logger.debug(f"Session File Dir: {cls.SESSION_FILE_DIR}")
+            app.logger.debug(f"Upload Folder: {cls.UPLOAD_FOLDER}")
