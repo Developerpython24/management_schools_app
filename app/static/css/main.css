@@ -1,6 +1,8 @@
 /* Modern CSS Reset */
 *, *::before, *::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
@@ -10,6 +12,7 @@ body {
     background-color: #f8f9fa;
     color: #495057;
     line-height: 1.6;
+    direction: rtl;
 }
 
 /* Base styles */
