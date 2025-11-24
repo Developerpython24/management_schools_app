@@ -55,7 +55,7 @@ class User(db.Model, UserMixin):  # ✅ ارث‌بری از UserMixin
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    last_login = db.Column(db.DateTime)
+    #last_login = db.Column(db.DateTime)
     
     school_id = db.Column(db.Integer, db.ForeignKey('schools.id'), nullable=True)
     
