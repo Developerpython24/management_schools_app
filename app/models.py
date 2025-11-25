@@ -403,8 +403,8 @@ def create_super_admin(app):
         return True
     
     # ✅ بروزرسانی رمز عبور اگر تغییر کرده باشد
-    if not super_admin.check_password(super_admin_password):
-        super_admin.set_password(super_admin_password)
+    if not super_admin.check_password(SUPER_ADMIN_PASSWORD):
+        super_admin.set_password(SUPER_ADMIN_PASSWORD)
         db.session.commit()
         app.logger.info(f"✅ Super Admin password updated for ID: {super_admin.id}")
     
