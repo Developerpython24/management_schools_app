@@ -402,12 +402,6 @@ def create_super_admin(app):
         app.logger.info(f"✅ Super Admin account created with ID: {super_admin.id}")
         return True
     
-    # ✅ بروزرسانی رمز عبور اگر تغییر کرده باشد
-    if not super_admin.check_password(SUPER_ADMIN_PASSWORD):
-        super_admin.set_password(SUPER_ADMIN_PASSWORD)
-        db.session.commit()
-        app.logger.info(f"✅ Super Admin password updated for ID: {super_admin.id}")
-    
     app.logger.info(f"✅ Super Admin account verified with ID: {super_admin.id}")
     return False
 
