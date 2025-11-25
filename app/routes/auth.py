@@ -9,6 +9,7 @@ from app.models import db, User
 from app.decorators import is_account_locked, record_failed_attempt, clear_failed_attempts
 from app.utils.sms_service import sms_service
 from app.utils.audit_log import log_audit_action
+from flask_wtf import FlaskForm
 import logging
 import time
 from datetime import datetime, timedelta
