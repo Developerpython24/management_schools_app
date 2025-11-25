@@ -114,7 +114,8 @@ def login():
             login_user(user, remember=form.remember.data, duration=timedelta(days=30))
             
             flash(f'خوشحالم که دوباره اینجا هستم، {user.name}!', 'success')
-            logger.info(f"User {username} logged in successfully. Session ID: {session.sid}")
+            session_id = session.get('_id', 'unknown')
+            logger.info(f"User {username} logged in successfully. Session ID: {session_id}")
             
             # Log audit action
             log_audit_action(
