@@ -60,9 +60,9 @@ def index():
     
     return redirect(url_for('auth.login'))
 
+
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login page"""
     if current_user.is_authenticated:
         return redirect(url_for('auth.index'))
     
@@ -72,62 +72,19 @@ def login():
         username = form.username.data.strip()
         password = form.password.data
         
-        # Check if account is locked
-        if is_account_locked(username):
-            remaining_time = 300 - (time.time() - login_attempts[username][1])  # 5 minutes lockout
-            minutes = int(remaining_time // 60)
-            seconds = int(remaining_time % 60)
-            flash(f'حساب شما به دلیل تلاش‌های ناموفق متوالی قفل شده است. لطفاً پس از {minutes} دقیقه و {seconds} ثانیه دوباره تلاش کنید.', 'danger')
-            logger.warning(f"Login attempt on locked account: {username}")
-            return render_template('auth/login.html', form=form)
         
-        user = None
+        user = User.query.filter_by(username=username).first()
         
-        #  اصلاح Super Admin - استفاده از مقدار واقعی از Config
-        from config import Config
-        if username == Config.SUPER_ADMIN_USERNAME:
-            # بررسی رمز عبور Super Admin
-            if check_password_hash(generate_password_hash(Config.SUPER_ADMIN_PASSWORD), password):
-                # ایجاد کاربر Super Admin
-                user = User(
-                    id=0,
-                    username=Config.SUPER_ADMIN_USERNAME,
-                    name='Super Admin',
-                    role='super_admin',
-                    is_active=True
-                )
-                user.set_id = lambda: str(0)  #  تنظیم موقت get_id برای Super Admin
-                logger.info(f"Super Admin {username} logged in successfully")
-        
-        # Check regular users
-        if not user:
-            user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password) and user.is_active:
+            login_user(user, remember=form.remember.data)
+            session['user_id'] = user.id  # ذخیره ID واقعی
             
-            if user and user.check_password(password):
-                logger.info(f"User {username} logged in successfully")
-            else:
-                user = None
-        
-        # Successful login
-        if user:
-            clear_failed_attempts(username)
-            login_user(user, remember=form.remember.data, duration=timedelta(days=30))
+            flash('خوشحالم که دوباره اینجا هستم!', 'success')
+            app.logger.info(f"User {username} logged in successfully. Session ID: {session.sid}")
             
-            flash(f'خوشحالم که دوباره اینجا هستم، {user.name}!', 'success')
-            session_id = session.get('_id', 'unknown')
-            logger.info(f"User {username} logged in successfully. Session ID: {session_id}")
-            
-            # Log audit action
-            log_audit_action(
-                user_id=user.id,
-                action='login',
-                description=f'User {user.username} logged in successfully',
-                school_id=user.school_id if hasattr(user, 'school_id') else None
-            )
-            
-            # Redirect to next page or dashboard
+            # ریدایرکت صحیح به داشبورد
             next_page = request.args.get('next')
-            if not next_page or urlparse(next_page).netloc != '':
+            if not next_page or url_parse(next_page).netloc != '':
                 if user.is_super_admin:
                     next_page = url_for('super_admin.dashboard')
                 elif user.is_school_admin:
@@ -137,13 +94,10 @@ def login():
                 else:
                     next_page = url_for('auth.index')
             
-            logger.info(f"Redirecting to: {next_page}")
+            # حذف مشکل حلقه ریدایرکت
             return redirect(next_page)
         
-        # Failed login
-        record_failed_attempt(username)
         flash('نام کاربری یا رمز عبور اشتباه است', 'danger')
-        logger.warning(f"Failed login attempt for username: {username}")
     
     return render_template('auth/login.html', form=form)
 
