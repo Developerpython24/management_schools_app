@@ -7,6 +7,17 @@ logger = logging.getLogger(__name__)
 
 def log_audit_action(user_id, action, description, school_id=None, target_user_id=None):
     """Log an audit action"""
+     try:
+        # ✅ بررسی وجود کاربر واقعی
+        if not user_id or user_id == 0:
+            app.logger.warning(f"Skipping audit log for invalid user ID: {user_id}")
+            return
+        
+        # ✅ بررسی وجود کاربر در دیتابیس
+        from app.models import User
+        if not User.query.get(user_id):
+            app.logger.warning(f"Skipping audit log for non-existent user ID: {user_id}")
+            return
     try:
         log = AuditLog(
             user_id=user_id,
