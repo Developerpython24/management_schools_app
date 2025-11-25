@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, current_user, login_required
- from flask_login import current_user
+from flask_login import current_user
 from flask import session 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session  
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
