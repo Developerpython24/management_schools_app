@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_user, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from flask import session 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session  
@@ -10,6 +10,7 @@ from app.decorators import is_account_locked, record_failed_attempt, clear_faile
 from app.utils.sms_service import sms_service
 from app.utils.audit_log import log_audit_action
 from flask_wtf import FlaskForm
+from urllib.parse import urlparse  
 import logging
 import time
 from datetime import datetime, timedelta
@@ -60,7 +61,6 @@ def index():
     
     return redirect(url_for('auth.login'))
 
-
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -72,7 +72,6 @@ def login():
         username = form.username.data.strip()
         password = form.password.data
         
-        
         user = User.query.filter_by(username=username).first()
         
         if user and user.check_password(password) and user.is_active:
@@ -80,11 +79,14 @@ def login():
             session['user_id'] = user.id  # ذخیره ID واقعی
             
             flash('خوشحالم که دوباره اینجا هستم!', 'success')
-            app.logger.info(f"User {username} logged in successfully. Session ID: {session.sid}")
+            #  اصلاح: استفاده از current_app به جای app
+            #  حذف session.sid چون در Render.com باعث خطا می‌شود
+            current_app.logger.info(f"User {username} logged in successfully. User ID: {user.id}")
             
             # ریدایرکت صحیح به داشبورد
             next_page = request.args.get('next')
-            if not next_page or url_parse(next_page).netloc != '':
+            # اصلاح: استفاده از urlparse به جای url_parse
+            if not next_page or urlparse(next_page).netloc != '':
                 if user.is_super_admin:
                     next_page = url_for('super_admin.dashboard')
                 elif user.is_school_admin:
@@ -98,6 +100,8 @@ def login():
             return redirect(next_page)
         
         flash('نام کاربری یا رمز عبور اشتباه است', 'danger')
+        #  اصلاح: استفاده از current_app برای لاگ خطاها
+        current_app.logger.warning(f"Failed login attempt for username: {username}")
     
     return render_template('auth/login.html', form=form)
 
