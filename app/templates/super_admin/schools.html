@@ -7,18 +7,10 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-3">
-                    <!-- ✅ دکمه بازگشت -->
-                    <a href="{{ url_for('super_admin.dashboard') }}" 
-                       class="btn btn-outline-secondary" 
-                       title="بازگشت به داشبورد">
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                    <h1 class="h3 mb-0">
-                        <i class="fas fa-building me-2 text-primary"></i>
-                        مدیریت مدارس
-                    </h1>
-                </div>
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-building me-2 text-primary"></i>
+                    مدیریت مدارس
+                </h1>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSchoolModal">
                     <i class="fas fa-plus me-1"></i>
                     ایجاد مدرسه جدید
@@ -44,16 +36,6 @@
                             <input type="text" name="search" class="form-control" 
                                    placeholder="نام مدرسه..." 
                                    value="{{ search_query }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">نوع مدرسه</label>
-                            <select name="type" class="form-select">
-                                <option value="">همه انواع</option>
-                                <option value="elementary" {% if school_type_filter == 'elementary' %}selected{% endif %}>ابتدایی</option>
-                                <option value="middle" {% if school_type_filter == 'middle' %}selected{% endif %}>متوسطه اول</option>
-                                <option value="high" {% if school_type_filter == 'high' %}selected{% endif %}>متوسطه دوم</option>
-                                <option value="combined" {% if school_type_filter == 'combined' %}selected{% endif %}>یکپارچه</option>
-                            </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">&nbsp;</label>
@@ -84,11 +66,6 @@
                         <i class="fas fa-list me-2"></i>
                         لیست مدارس
                         <span class="badge bg-primary rounded-pill ms-2">{{ pagination.total }}</span>
-                    </span>
-                    <span class="text-muted">
-                        {% if pagination.pages > 1 %}
-                            صفحه {{ pagination.page }} از {{ pagination.pages }}
-                        {% endif %}
                     </span>
                 </div>
                 <div class="card-body">
@@ -152,7 +129,7 @@
                                         <small class="text-muted">{{ school.created_at.strftime('%Y/%m/%d') }}</small>
                                     </td>
                                     <td>
-                                        <div class="d-flex gap-2">
+                                        <div class="d-flex gap-1">
                                             <a href="{{ url_for('super_admin.edit_school', school_id=school.id) }}" 
                                                class="btn btn-sm btn-outline-primary" 
                                                title="ویرایش">
@@ -201,32 +178,35 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ url_for('super_admin.schools') }}" class="needs-validation" novalidate>
-                <!-- ✅ اضافه کردن CSRF token -->
-                {{ form.hidden_tag() }}
+                <input type="hidden" name="form_type" value="basic">
                 
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">نام مدرسه <span class="text-danger">*</span></label>
-                            {{ form.name(class="form-control", required=True, placeholder="نام مدرسه را وارد کنید") }}
-                            <div class="invalid-feedback">نام مدرسه الزامی است</div>
+                            {{ school_form.name(class="form-control", required=True) }}
+                            {% for error in school_form.name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">نوع مدرسه <span class="text-danger">*</span></label>
-                            {{ form.school_type(class="form-select", required=True) }}
-                            <div class="invalid-feedback">نوع مدرسه الزامی است</div>
+                            {{ school_form.school_type(class="form-select", required=True) }}
+                            {% for error in school_form.school_type.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         <div class="col-12">
                             <label class="form-label">آدرس</label>
-                            {{ form.address(class="form-control", rows="2", placeholder="آدرس کامل مدرسه...") }}
+                            {{ school_form.address(class="form-control", placeholder="آدرس کامل مدرسه...") }}
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">شماره تماس</label>
-                            {{ form.phone(class="form-control", placeholder="021-12345678") }}
+                            {{ school_form.phone(class="form-control", placeholder="021-12345678") }}
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">ایمیل</label>
-                            {{ form.email(class="form-control", placeholder="school@example.com") }}
+                            {{ school_form.email(class="form-control", placeholder="school@example.com") }}
                         </div>
                     </div>
                 </div>
@@ -244,29 +224,153 @@
         </div>
     </div>
 </div>
+
+<!-- مودال ایجاد مدرسه با مدیر -->
+<div class="modal fade" id="addSchoolWithAdminModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-school me-2"></i>
+                    ایجاد مدرسه با مدیر
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('super_admin.schools') }}" class="needs-validation" novalidate>
+                <input type="hidden" name="form_type" value="with_admin">
+                
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- اطلاعات مدرسه -->
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-building me-2"></i>
+                                اطلاعات مدرسه
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">نام مدرسه <span class="text-danger">*</span></label>
+                            {{ school_with_admin_form.name(class="form-control", required=True) }}
+                            {% for error in school_with_admin_form.name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">نوع مدرسه <span class="text-danger">*</span></label>
+                            {{ school_with_admin_form.school_type(class="form-select", required=True) }}
+                            {% for error in school_with_admin_form.school_type.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">آدرس</label>
+                            {{ school_with_admin_form.address(class="form-control", placeholder="آدرس کامل مدرسه...") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">شماره تماس مدرسه</label>
+                            {{ school_with_admin_form.phone(class="form-control", placeholder="021-12345678") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ایمیل مدرسه</label>
+                            {{ school_with_admin_form.email(class="form-control", placeholder="school@example.com") }}
+                        </div>
+                        
+                        <!-- اطلاعات مدیر -->
+                        <div class="col-12">
+                            <h5 class="text-success mb-3 mt-4">
+                                <i class="fas fa-user-tie me-2"></i>
+                                اطلاعات مدیر مدرسه
+                            </h5>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">نام کاربری مدیر <span class="text-danger">*</span></label>
+                            {{ school_with_admin_form.admin_username(class="form-control", required=True) }}
+                            {% for error in school_with_admin_form.admin_username.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">رمز عبور <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                {{ school_with_admin_form.admin_password(class="form-control", required=True, placeholder="حداقل 8 کاراکتر") }}
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="input[name='admin_password']">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% for error in school_with_admin_form.admin_password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">تایید رمز عبور <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                {{ school_with_admin_form.confirm_password(class="form-control", required=True, placeholder="تکرار رمز عبور") }}
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="input[name='confirm_password']">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% for error in school_with_admin_form.confirm_password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">نام کامل مدیر <span class="text-danger">*</span></label>
+                            {{ school_with_admin_form.admin_name(class="form-control", required=True) }}
+                            {% for error in school_with_admin_form.admin_name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">شماره تماس مدیر</label>
+                            {{ school_with_admin_form.admin_phone(class="form-control", placeholder="09123456789") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ایمیل مدیر</label>
+                            {{ school_with_admin_form.admin_email(class="form-control", placeholder="admin@school.com") }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>
+                        ایجاد مدرسه و مدیر
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // ✅ فعال‌سازی tooltipها
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-        
-        // ✅ فعال‌سازی confirm dialog برای حذف
-        document.querySelectorAll('[data-confirm]').forEach(element => {
-            element.addEventListener('click', function(e) {
-                const message = this.getAttribute('data-confirm');
-                if (!confirm(message)) {
-                    e.preventDefault();
-                    e.stopPropagation();
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetSelector = this.getAttribute('data-target');
+                const input = document.querySelector(targetSelector);
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
                 }
             });
         });
         
-        // ✅ فعال‌سازی form validation
+        // Form validation
         (function() {
             'use strict'
             var forms = document.querySelectorAll('.needs-validation')
@@ -281,14 +385,6 @@
                     }, false)
                 })
         })();
-        
-        // ✅ نمایش پیام‌ها با افکت
-        document.querySelectorAll('.alert').forEach(alert => {
-            setTimeout(() => {
-                alert.classList.add('fade');
-                alert.classList.add('show');
-            }, 100);
-        });
     });
 </script>
 {% endblock %}
