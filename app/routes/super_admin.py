@@ -109,42 +109,37 @@ def dashboard():
 @login_required
 @super_admin_required
 def schools():
-    """Manage schools"""
     form = SchoolForm()
     
-    # Handle form submission
     if form.validate_on_submit():
         try:
-            # Check for duplicate school name
-            if School.query.filter_by(name=form.name.data).first():
-                flash('نام مدرسه تکراری است', 'danger')
-                return render_template('super_admin/schools.html', form=form, schools=[], pagination=None)
+            # ✅ بررسی تکراری نبودن نام مدرسه
+            existing_school = School.query.filter_by(name=form.name.data.strip()).first()
+            if existing_school:
+                flash('نام مدرسه تکراری است. لطفاً نام متفاوتی انتخاب کنید.', 'danger')
+                return render_template('super_admin/schools.html', form=form, schools=School.query.all())
             
             school = School(
-                name=form.name.data,
+                name=form.name.data.strip(),
                 type=form.school_type.data,
-                address=form.address.data or None,
-                phone=form.phone.data or None,
-                email=form.email.data or None
+                address=form.address.data.strip() if form.address.data else None,
+                phone=form.phone.data.strip() if form.phone.data else None,
+                email=form.email.data.strip() if form.email.data else None
             )
             
             db.session.add(school)
             db.session.commit()
             
-            # Create default skills for school
-            create_default_skills_for_school(school.id)
+            # ✅ ایجاد کلاس‌های پیش‌فرض برای مدرسه
+            create_default_classes_for_school(school.id)
             
-            # Log audit action
-            log_audit_action(
-                user_id=current_user.id,
-                action='create_school',
-                description=f'مدرسه جدید "{school.name}" ایجاد شد',
-                school_id=school.id
-            )
+            # ✅ ایجاد معلم پیش‌فرض
+            create_default_teacher_for_school(school.id)
             
-            flash(f'مدرسه "{school.name}" با موفقیت ایجاد شد', 'success')
+            flash(f'مدرسه "{school.name}" با موفقیت ایجاد شد!', 'success')
             logger.info(f"New school created: {school.name} by {current_user.username}")
             
+            # ✅ ریدایرکت به همان صفحه برای نمایش مدرسه جدید
             return redirect(url_for('super_admin.schools'))
             
         except SQLAlchemyError as e:
@@ -155,33 +150,99 @@ def schools():
             logger.error(f"Unexpected error creating school: {str(e)}")
             flash('خطایی رخ داده است. لطفاً با پشتیبانی تماس بگیرید.', 'danger')
     
-    # Get schools with pagination and filtering
+    # ✅ نمایش خطاها در صورت وجود
+    if form.errors:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"خطا در {getattr(form, field).label.text}: {error}", 'danger')
+    
+    # ✅ گرفتن مدارس با pagination
     page = request.args.get('page', 1, type=int)
     search_query = request.args.get('search', '').strip()
-    school_type_filter = request.args.get('type', '').strip()
     
     query = School.query
-    
     if search_query:
         query = query.filter(School.name.ilike(f'%{search_query}%'))
-    
-    if school_type_filter:
-        query = query.filter_by(type=school_type_filter)
     
     schools_pagination = query.order_by(School.created_at.desc()).paginate(
         page=page, per_page=15, error_out=False
     )
     
-    # Get school type statistics for filters
-    school_types = db.session.query(School.type, db.func.count(School.id)).group_by(School.type).all()
-    
-    return render_template('super_admin/schools.html',
-                         form=form,
+    return render_template('super_admin/schools.html', 
+                         form=form, 
                          schools=schools_pagination.items,
                          pagination=schools_pagination,
-                         search_query=search_query,
-                         school_type_filter=school_type_filter,
-                         school_types=school_types)
+                         search_query=search_query)
+
+def create_default_classes_for_school(school_id):
+    """Create default classes for new school"""
+    try:
+        # ایجاد چند کلاس پیش‌فرض بر اساس نوع مدرسه
+        school = School.query.get(school_id)
+        
+        if school.type in ['elementary', 'combined']:
+            default_grades = ['اول', 'دوم', 'سوم', 'چهارم', 'پنجم', 'ششم']
+        elif school.type == 'middle':
+            default_grades = ['هفتم', 'هشتم', 'نهم']
+        elif school.type == 'high':
+            default_grades = ['دهم', 'یازدهم', 'دوازدهم']
+        else:
+            default_grades = ['اول', 'دوم', 'سوم']
+        
+        for grade in default_grades:
+            class_name = f"{grade} - {school.name}"
+            existing_class = Class.query.filter_by(name=class_name, school_id=school_id).first()
+            
+            if not existing_class:
+                default_class = Class(
+                    name=class_name,
+                    grade=grade,
+                    school_id=school_id
+                )
+                db.session.add(default_class)
+        
+        db.session.commit()
+        logger.info(f"Default classes created for school {school_id}")
+        
+    except Exception as e:
+        logger.error(f"Error creating default classes: {str(e)}")
+        db.session.rollback()
+
+def create_default_teacher_for_school(school_id):
+    """Create default teacher account for new school"""
+    try:
+        # ایجاد یک حساب معلم پیش‌فرض
+        default_username = f"teacher_{school_id}"
+        default_password = "teacher123"
+        
+        existing_teacher = User.query.filter_by(username=default_username).first()
+        
+        if not existing_teacher:
+            teacher = User(
+                username=default_username,
+                name=f"معلم پیش‌فرض مدرسه {school_id}",
+                role='teacher',
+                school_id=school_id,
+                is_active=True
+            )
+            teacher.set_password(default_password)
+            
+            db.session.add(teacher)
+            db.session.commit()
+            
+            # ایجاد پروفایل معلم
+            teacher_profile = Teacher(
+                user_id=teacher.id,
+                school_id=school_id
+            )
+            db.session.add(teacher_profile)
+            db.session.commit()
+            
+            logger.info(f"Default teacher created for school {school_id}")
+            
+    except Exception as e:
+        logger.error(f"Error creating default teacher: {str(e)}")
+        db.session.rollback()
 
 @bp.route('/schools/<int:school_id>/edit', methods=['GET', 'POST'])
 @login_required
