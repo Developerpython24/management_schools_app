@@ -1,26 +1,69 @@
-services:
+ervices:
   - type: web
     name: school-management
     env: python
     region: frankfurt
+    plan: starter
     buildCommand: |
+      echo "🚀 Starting build process for School Management System..."
+      
+      # ایجاد دایرکتوری‌های ضروری
+      mkdir -p /opt/render/project/src/databases
+      mkdir -p /opt/render/project/src/uploads
+      mkdir -p /opt/render/project/src/sessions
+      mkdir -p /opt/render/project/src/logs
+      mkdir -p app/static
+      mkdir -p migrations
+      
+      # ایجاد favicon.ico
+      echo "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAFVBMVEX///8AAAD///8AAAD///8AAAD///9t52NFAAAAB3RSTlMAERAZmZn7VQO2PAAAAHhJREFUGNNjYGBgZGJmYWFhZWVj5+Dk4uHlFxQSFhYRlVJQUlZRVVPX0NTS1tHTNzA0MjYxtbK2sbWzd3B0cnZxdXP38PTy9vH18w8IDAoOCQ0Lj4iMio5hYIwBADuZJgFzJg7/AAAAAElFTkSuQmCC" | base64 -d > app/static/favicon.ico
+      
+      # نصب وابستگی‌ها
       echo "✅ Installing dependencies..."
       pip install -r requirements.txt
-      echo "🔄 Fixing database schema..."
-      flask db upgrade || (echo "❌ Migration failed, recreating database..." && dropdb school_management --if-exists && createdb school_management && flask db init && flask db migrate -m "Initial schema" && flask db upgrade)
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT run:app"
+      
+      # اجرای مهاجرت‌های دیتابیس
+      echo "🔄 Running database migrations..."
+      if [ ! -d "migrations" ]; then
+        echo "Initializing migrations..."
+        flask db init
+      fi
+      flask db migrate -m "Automatic migration on deployment" || echo "No changes to migrate"
+      flask db upgrade
+      
+      echo "✅ Build completed successfully!"
+    startCommand: "gunicorn --worker-class gevent --workers 3 --timeout 120 --bind 0.0.0.0:$PORT run:app"
     envVars:
-      - key: PORT
-        value: "10000"
       - key: FLASK_ENV
         value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SUPER_ADMIN_USERNAME
+        sync: false  # باید در Render Dashboard تنظیم شود
+      - key: SUPER_ADMIN_PASSWORD
+        generateValue: true  # باید در Render Dashboard تنظیم شود
       - key: DATABASE_URL
         fromDatabase:
           name: school-db
           property: connectionString
+      - key: PORT
+        value: "10000"
+      - key: SESSION_FILE_DIR
+        value: /opt/render/project/src/sessions
+      - key: DATABASE_DIR
+        value: /opt/render/project/src/databases
+      - key: UPLOAD_FOLDER
+        value: /opt/render/project/src/uploads
+      - key: SMS_ACTIVE
+        value: "False"
+      - key: MAIL_USE_TLS
+        value: "True"
     
 databases:
   - name: school-db
     databaseName: school_management
     user: school_user
     plan: starter
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all IPs (restrict in production)
