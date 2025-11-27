@@ -13,20 +13,26 @@ class School(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    type = db.Column(db.String(20), nullable=False)  # elementary, middle, high, combined
+    type = db.Column(db.String(20), nullable=False)
     address = db.Column(db.String(200))
     phone = db.Column(db.String(20))
     email = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
+    # ✅ اضافه کردن فیلد مدیر مدرسه
+    principal_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
     # Relationships
     users = db.relationship('User', backref='school', lazy=True, foreign_keys='User.school_id')
-    students = db.relationship('Student', backref='school', lazy=True)
-    teachers = db.relationship('Teacher', backref='school', lazy=True)
-    classes = db.relationship('Class', backref='school', lazy=True)
-    subjects = db.relationship('Subject', backref='school', lazy=True)
-    skills = db.relationship('Skill', backref='school', lazy=True)
+    students = db.relationship('Student', backref='school', lazy=True, cascade='all, delete-orphan')
+    teachers = db.relationship('Teacher', backref='school', lazy=True, cascade='all, delete-orphan')
+    classes = db.relationship('Class', backref='school', lazy=True, cascade='all, delete-orphan')
+    subjects = db.relationship('Subject', backref='school', lazy=True, cascade='all, delete-orphan')
+    skills = db.relationship('Skill', backref='school', lazy=True, cascade='all, delete-orphan')
+    
+    # ✅ رابطه با مدیر اصلی مدرسه
+    principal = db.relationship('User', foreign_keys=[principal_id], post_update=True)
     
     __table_args__ = (
         db.Index('ix_schools_name', 'name'),
@@ -35,12 +41,16 @@ class School(db.Model):
     
     @property
     def type_fa(self):
-        """Get Persian name for school type"""
-        return Config.SCHOOL_TYPES.get(self.type, self.type)
+        type_map = {
+            'elementary': 'ابتدایی',
+            'middle': 'متوسطه اول',
+            'high': 'متوسطه دوم',
+            'combined': 'یکپارچه'
+        }
+        return type_map.get(self.type, self.type)
     
     def __repr__(self):
-        return f'<School {self.name}>'
-
+        return f'<School {self.name} ({self.type})>'
 
 class User(db.Model, UserMixin):  # ✅ ارث‌بری از UserMixin
     __tablename__ = 'users'
